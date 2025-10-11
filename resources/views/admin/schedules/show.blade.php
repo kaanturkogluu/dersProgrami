@@ -13,7 +13,7 @@
             <div>
                 <span class="text-dark">{{ $schedule->name }}</span>
                 <br>
-                <small class="text-muted">{{ $schedule->student->full_name }} - {{ $schedule->area }}</small>
+                <small class="text-muted">{{ $schedule->student->full_name }} - {{ implode(', ', $schedule->areas ?? []) }}</small>
             </div>
         </div>
     </h1>
@@ -64,13 +64,25 @@
                             </div>
                         </div>
                         
-                        <h6 class="fw-bold mt-3">Alan</h6>
-                        <span class="badge bg-primary">{{ $schedule->area }}</span>
+                        <h6 class="fw-bold mt-3">Alanlar</h6>
+                        @if($schedule->areas && count($schedule->areas) > 0)
+                            @foreach($schedule->areas as $area)
+                                <span class="badge bg-{{ $area == 'TYT' ? 'primary' : ($area == 'AYT' ? 'success' : ($area == 'KPSS' ? 'warning' : ($area == 'DGS' ? 'info' : 'secondary'))) }} me-1">
+                                    {{ $area }}
+                                </span>
+                            @endforeach
+                        @else
+                            <span class="text-muted">Alan belirtilmemiş</span>
+                        @endif
                     </div>
                     <div class="col-md-6">
                         <h6 class="fw-bold">Tarih Aralığı</h6>
                         <p class="text-muted">
-                            {{ $schedule->start_date->format('d.m.Y') }} - {{ $schedule->end_date->format('d.m.Y') }}
+                            @if($schedule->start_date && $schedule->end_date)
+                                {{ $schedule->start_date->format('d.m.Y') }} - {{ $schedule->end_date->format('d.m.Y') }}
+                            @else
+                                <span class="text-muted">Tarih belirtilmemiş</span>
+                            @endif
                         </p>
                         
                         <h6 class="fw-bold">Süre</h6>

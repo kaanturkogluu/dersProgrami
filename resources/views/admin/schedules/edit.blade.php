@@ -67,42 +67,66 @@
             </div>
             
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-12">
                     <div class="mb-3">
-                        <label for="area" class="form-label">Alan <span class="text-danger">*</span></label>
-                        <select class="form-select @error('area') is-invalid @enderror" 
-                                id="area" name="area" required>
-                            <option value="">Alan Seçin</option>
-                            <option value="TYT" {{ old('area', $schedule->area) == 'TYT' ? 'selected' : '' }}>TYT</option>
-                            <option value="AYT" {{ old('area', $schedule->area) == 'AYT' ? 'selected' : '' }}>AYT</option>
-                            <option value="KPSS" {{ old('area', $schedule->area) == 'KPSS' ? 'selected' : '' }}>KPSS</option>
-                            <option value="DGS" {{ old('area', $schedule->area) == 'DGS' ? 'selected' : '' }}>DGS</option>
-                            <option value="ALES" {{ old('area', $schedule->area) == 'ALES' ? 'selected' : '' }}>ALES</option>
-                        </select>
-                        @error('area')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <label for="areas" class="form-label">Alanlar <span class="text-danger">*</span></label>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Alan Seçimi:</strong> Birden fazla alan seçebilirsiniz.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="TYT" id="area_tyt" name="areas[]"
+                                           {{ in_array('TYT', old('areas', $schedule->areas ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="area_tyt">
+                                        <strong>TYT</strong> - Temel Yeterlilik Testi
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="EA" id="area_ea" name="areas[]"
+                                           {{ in_array('EA', old('areas', $schedule->areas ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="area_ea">
+                                        <strong>EA</strong> - Eşit Ağırlık (TYT + AYT EA)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="SAY" id="area_say" name="areas[]"
+                                           {{ in_array('SAY', old('areas', $schedule->areas ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="area_say">
+                                        <strong>SAY</strong> - Sayısal (TYT + AYT Sayısal)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="SOZ" id="area_soz" name="areas[]"
+                                           {{ in_array('SOZ', old('areas', $schedule->areas ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="area_soz">
+                                        <strong>SÖZ</strong> - Sözel (TYT + AYT Sözel)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="DIL" id="area_dil" name="areas[]"
+                                           {{ in_array('DIL', old('areas', $schedule->areas ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="area_dil">
+                                        <strong>DİL</strong> - Dil (TYT + YDT)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="KPSS" id="area_kpss" name="areas[]"
+                                           {{ in_array('KPSS', old('areas', $schedule->areas ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="area_kpss">
+                                        <strong>KPSS</strong> - Kamu Personeli Seçme Sınavı
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        @error('areas')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="start_date" class="form-label">Başlangıç Tarihi <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
-                               id="start_date" name="start_date" value="{{ old('start_date', $schedule->start_date->format('Y-m-d')) }}" required>
-                        @error('start_date')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="end_date" class="form-label">Bitiş Tarihi <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('end_date') is-invalid @enderror" 
-                               id="end_date" name="end_date" value="{{ old('end_date', $schedule->end_date->format('Y-m-d')) }}" required>
-                        @error('end_date')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        @error('areas.*')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -153,10 +177,9 @@
                     <thead>
                         <tr>
                             <th>Gün</th>
-                            <th>Saat</th>
                             <th>Ders</th>
                             <th>Konu</th>
-                            <th>Süre</th>
+                            <th>Alt Konu</th>
                             <th>Durum</th>
                             <th>Notlar</th>
                             <th>İşlemler</th>
@@ -169,9 +192,6 @@
                                 <span class="badge bg-info">{{ $item->day_name }}</span>
                             </td>
                             <td>
-                                <small>{{ $item->start_time->format('H:i') }} - {{ $item->end_time->format('H:i') }}</small>
-                            </td>
-                            <td>
                                 <span class="badge bg-secondary">{{ $item->course->name }}</span>
                             </td>
                             <td>
@@ -182,7 +202,11 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge bg-warning">{{ $item->duration_formatted }}</span>
+                                @if($item->subtopic)
+                                    <span class="badge bg-warning">{{ $item->subtopic->name }}</span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                             <td>
                                 @if($item->is_completed)

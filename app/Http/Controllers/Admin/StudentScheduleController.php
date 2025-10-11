@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentSchedule;
+use App\Models\ScheduleItem;
 use App\Models\Course;
 use App\Models\Topic;
 use App\Models\Subtopic;
@@ -114,9 +115,8 @@ class StudentScheduleController extends Controller
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'name' => 'required|string|max:255',
-            'area' => 'required|in:TYT,AYT,KPSS,DGS,ALES',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'areas' => 'required|array|min:1',
+            'areas.*' => 'required|in:TYT,EA,SAY,SOZ,DIL,KPSS',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
@@ -124,9 +124,7 @@ class StudentScheduleController extends Controller
         $schedule->update([
             'student_id' => $request->student_id,
             'name' => $request->name,
-            'area' => $request->area,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'areas' => $request->areas,
             'description' => $request->description,
             'is_active' => $request->has('is_active'),
         ]);
@@ -307,5 +305,16 @@ class StudentScheduleController extends Controller
         $weeklySchedule = $weeklySchedule->groupBy('day');
 
         return view('admin.schedules.student-calendar', compact('student', 'schedules', 'weeklySchedule'));
+    }
+
+    /**
+     * Schedule item'ı sil
+     */
+    public function destroyScheduleItem(ScheduleItem $scheduleItem)
+    {
+        $scheduleItem->delete();
+        
+        return redirect()->back()
+            ->with('success', 'Program öğesi başarıyla silindi.');
     }
 }
