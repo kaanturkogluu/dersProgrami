@@ -58,7 +58,7 @@
             </div>
             
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="mb-3">
                         <label for="area" class="form-label">Alan <span class="text-danger">*</span></label>
                         <select class="form-select @error('area') is-invalid @enderror" 
@@ -71,28 +71,6 @@
                             <option value="ALES" {{ old('area') == 'ALES' ? 'selected' : '' }}>ALES</option>
                         </select>
                         @error('area')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="start_date" class="form-label">Başlangıç Tarihi <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
-                               id="start_date" name="start_date" value="{{ old('start_date') }}" required>
-                        @error('start_date')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="end_date" class="form-label">Bitiş Tarihi <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('end_date') is-invalid @enderror" 
-                               id="end_date" name="end_date" value="{{ old('end_date') }}" required>
-                        @error('end_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -114,20 +92,54 @@
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Haftalık Program</h5>
-                <button type="button" class="btn btn-sm btn-primary" onclick="addScheduleItem()">
-                    <i class="fas fa-plus me-1"></i>
-                    Ders Ekle
-                </button>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Haftalık Program Tablosu
+                </h5>
+                <div>
+                    <button type="button" class="btn btn-success btn-sm me-2" onclick="addScheduleItem()">
+                        <i class="fas fa-plus me-1"></i>
+                        Satır Ekle
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm me-2" onclick="showQuickAddModal()">
+                        <i class="fas fa-bolt me-1"></i>
+                        Hızlı Ekle
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="clearAllRows()">
+                        <i class="fas fa-trash me-1"></i>
+                        Tümünü Temizle
+                    </button>
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            <div id="scheduleItems">
-                <!-- Program öğeleri buraya eklenecek -->
-            </div>
-            
-            <div class="text-center mt-4">
-                <p class="text-muted">Henüz ders eklenmemiş. "Ders Ekle" butonuna tıklayarak programınızı oluşturun.</p>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover mb-0" id="scheduleTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 60px;" class="text-center">#</th>
+                            <th style="width: 120px;">Gün</th>
+                            <th style="width: 250px;">Ders</th>
+                            <th style="width: 200px;">Konu</th>
+                            <th style="width: 180px;">Alt Konu</th>
+                            <th style="width: 250px;">Notlar</th>
+                            <th style="width: 80px;" class="text-center">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleItems">
+                        <tr class="empty-row">
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-table fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">Henüz program satırı eklenmemiş</h5>
+                                <p class="text-muted mb-3">Programınıza satır eklemek için "Satır Ekle" butonuna tıklayın.</p>
+                                <button type="button" class="btn btn-primary" onclick="addScheduleItem()">
+                                    <i class="fas fa-plus me-2"></i>
+                                    İlk Satırı Ekle
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -144,94 +156,142 @@
     </div>
 </form>
 
-<!-- Program Öğesi Template -->
+<!-- Program Öğesi Template - Excel Satırı -->
 <template id="scheduleItemTemplate">
-    <div class="schedule-item border rounded p-3 mb-3">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="mb-3">
-                    <label class="form-label">Gün</label>
-                    <select class="form-select day-select" name="schedule_items[INDEX][day_of_week]" required>
-                        <option value="">Gün Seçin</option>
-                        <option value="monday">Pazartesi</option>
-                        <option value="tuesday">Salı</option>
-                        <option value="wednesday">Çarşamba</option>
-                        <option value="thursday">Perşembe</option>
-                        <option value="friday">Cuma</option>
-                        <option value="saturday">Cumartesi</option>
-                        <option value="sunday">Pazar</option>
-                    </select>
-                </div>
+    <tr class="schedule-item">
+        <td class="text-center">
+            <span class="row-number">1</span>
+        </td>
+        <td>
+            <select class="form-select form-select-sm day-select" name="schedule_items[INDEX][day_of_week]" required>
+                <option value="">Gün Seçin</option>
+                <option value="monday">Pazartesi</option>
+                <option value="tuesday">Salı</option>
+                <option value="wednesday">Çarşamba</option>
+                <option value="thursday">Perşembe</option>
+                <option value="friday">Cuma</option>
+                <option value="saturday">Cumartesi</option>
+                <option value="sunday">Pazar</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm course-select" name="schedule_items[INDEX][course_id]" required>
+                <option value="">Ders Seçin</option>
+                @foreach($courses as $course)
+                    <option value="{{ $course->id }}" data-area="{{ $course->category->name }}">
+                        {{ $course->name }} ({{ $course->category->name }})
+                    </option>
+                @endforeach
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm topic-select" name="schedule_items[INDEX][topic_id]">
+                <option value="">Konu Seçin</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm subtopic-select" name="schedule_items[INDEX][subtopic_id]">
+                <option value="">Alt Konu Seçin</option>
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm" name="schedule_items[INDEX][notes]" placeholder="Notlar...">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeScheduleItem(this)" title="Satırı Sil">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<!-- Hızlı Ekleme Modal -->
+<div class="modal fade" id="quickAddModal" tabindex="-1" aria-labelledby="quickAddModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddModalLabel">
+                    <i class="fas fa-bolt me-2"></i>
+                    Hızlı Ders Ekleme
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
-            <div class="col-md-3">
-                <div class="mb-3">
-                    <label class="form-label">Ders</label>
-                    <select class="form-select course-select" name="schedule_items[INDEX][course_id]" required>
-                        <option value="">Ders Seçin</option>
-                        @foreach($courses as $course)
-                            <option value="{{ $course->id }}" data-area="{{ $course->category->name }}">
-                                {{ $course->name }} ({{ $course->category->name }})
-                            </option>
-                        @endforeach
-                    </select>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Nasıl Kullanılır:</strong> Önce dersleri seçin, sonra hangi günlerde çalışılacağını belirleyin. 
+                    Excel'de olduğu gibi önce tüm dersleri ekleyip sonra düzenleyebilirsiniz.
                 </div>
-            </div>
-            
-            <div class="col-md-2">
-                <div class="mb-3">
-                    <label class="form-label">Başlangıç</label>
-                    <input type="time" class="form-control start-time" name="schedule_items[INDEX][start_time]" required>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Dersleri Seçin:</h6>
+                        <div id="courseCheckboxes" style="max-height: 300px; overflow-y: auto;">
+                            @foreach($courses as $course)
+                            <div class="form-check">
+                                <input class="form-check-input course-checkbox" type="checkbox" 
+                                       value="{{ $course->id }}" 
+                                       data-course-name="{{ $course->name }}" 
+                                       data-course-category="{{ $course->category->name }}"
+                                       id="course_{{ $course->id }}">
+                                <label class="form-check-label" for="course_{{ $course->id }}">
+                                    {{ $course->name }} <small class="text-muted">({{ $course->category->name }})</small>
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Günleri Seçin:</h6>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="monday" id="day_monday">
+                            <label class="form-check-label" for="day_monday">Pazartesi</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="tuesday" id="day_tuesday">
+                            <label class="form-check-label" for="day_tuesday">Salı</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="wednesday" id="day_wednesday">
+                            <label class="form-check-label" for="day_wednesday">Çarşamba</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="thursday" id="day_thursday">
+                            <label class="form-check-label" for="day_thursday">Perşembe</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="friday" id="day_friday">
+                            <label class="form-check-label" for="day_friday">Cuma</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="saturday" id="day_saturday">
+                            <label class="form-check-label" for="day_saturday">Cumartesi</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input day-checkbox" type="checkbox" value="sunday" id="day_sunday">
+                            <label class="form-check-label" for="day_sunday">Pazar</label>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="col-md-2">
-                <div class="mb-3">
-                    <label class="form-label">Bitiş</label>
-                    <input type="time" class="form-control end-time" name="schedule_items[INDEX][end_time]" required>
-                </div>
-            </div>
-            
-            <div class="col-md-2">
-                <div class="mb-3">
-                    <label class="form-label">İşlemler</label>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeScheduleItem(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                
+                <div class="mt-3">
+                    <h6>Önizleme:</h6>
+                    <div id="previewItems" class="border rounded p-2" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa;">
+                        <small class="text-muted">Ders ve gün seçin...</small>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label class="form-label">Konu (Opsiyonel)</label>
-                    <select class="form-select topic-select" name="schedule_items[INDEX][topic_id]">
-                        <option value="">Konu Seçin</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label class="form-label">Alt Konu (Opsiyonel)</label>
-                    <select class="form-select subtopic-select" name="schedule_items[INDEX][subtopic_id]">
-                        <option value="">Alt Konu Seçin</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label class="form-label">Notlar</label>
-                    <input type="text" class="form-control" name="schedule_items[INDEX][notes]" placeholder="Notlar...">
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="addQuickItems()">
+                    <i class="fas fa-plus me-2"></i>
+                    Seçilenleri Ekle
+                </button>
             </div>
         </div>
     </div>
-</template>
+</div>
 
 <script>
 let scheduleItemIndex = 0;
@@ -244,11 +304,21 @@ function addScheduleItem() {
     const html = clone.querySelector('.schedule-item').outerHTML;
     const updatedHtml = html.replace(/INDEX/g, scheduleItemIndex);
     
-    const container = document.getElementById('scheduleItems');
-    container.insertAdjacentHTML('beforeend', updatedHtml);
+    const tbody = document.getElementById('scheduleItems');
+    
+    // Boş satırı gizle
+    const emptyRow = tbody.querySelector('.empty-row');
+    if (emptyRow) {
+        emptyRow.style.display = 'none';
+    }
+    
+    tbody.insertAdjacentHTML('beforeend', updatedHtml);
+    
+    // Satır numarasını güncelle
+    updateRowNumbers();
     
     // Yeni eklenen ders seçimini alan filtresine göre güncelle
-    const newScheduleItem = container.querySelector('.schedule-item:last-child');
+    const newScheduleItem = tbody.querySelector('.schedule-item:last-child');
     const newCourseSelect = newScheduleItem.querySelector('.course-select');
     const newTopicSelect = newScheduleItem.querySelector('.topic-select');
     const newSubtopicSelect = newScheduleItem.querySelector('.subtopic-select');
@@ -291,22 +361,189 @@ function addScheduleItem() {
             });
     }
     
-    // Eğer ilk öğe ise, merkez mesajını gizle
-    if (scheduleItemIndex === 0) {
-        container.querySelector('.text-center').style.display = 'none';
-    }
-    
     scheduleItemIndex++;
 }
 
 function removeScheduleItem(button) {
     button.closest('.schedule-item').remove();
     
-    // Eğer hiç öğe kalmadıysa, merkez mesajını göster
-    const container = document.getElementById('scheduleItems');
-    if (container.querySelectorAll('.schedule-item').length === 0) {
-        container.querySelector('.text-center').style.display = 'block';
+    // Satır numaralarını güncelle
+    updateRowNumbers();
+    
+    // Eğer hiç öğe kalmadıysa, boş satırı göster
+    const tbody = document.getElementById('scheduleItems');
+    if (tbody.querySelectorAll('.schedule-item').length === 0) {
+        const emptyRow = tbody.querySelector('.empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = 'table-row';
+        }
     }
+}
+
+function updateRowNumbers() {
+    const rows = document.querySelectorAll('.schedule-item');
+    rows.forEach((row, index) => {
+        const rowNumber = row.querySelector('.row-number');
+        if (rowNumber) {
+            rowNumber.textContent = index + 1;
+        }
+    });
+}
+
+function clearAllRows() {
+    if (confirm('Tüm satırları silmek istediğinizden emin misiniz?')) {
+        const tbody = document.getElementById('scheduleItems');
+        tbody.querySelectorAll('.schedule-item').forEach(row => row.remove());
+        
+        // Boş satırı göster
+        const emptyRow = tbody.querySelector('.empty-row');
+        if (emptyRow) {
+            emptyRow.style.display = 'table-row';
+        }
+        
+        scheduleItemIndex = 0;
+    }
+}
+
+function showQuickAddModal() {
+    const modal = new bootstrap.Modal(document.getElementById('quickAddModal'));
+    modal.show();
+    
+    // Alan filtresini uygula
+    const selectedArea = document.getElementById('area').value;
+    if (selectedArea) {
+        filterCoursesInModal(selectedArea);
+    }
+}
+
+function filterCoursesInModal(area) {
+    const courseCheckboxes = document.querySelectorAll('.course-checkbox');
+    courseCheckboxes.forEach(checkbox => {
+        const courseCategory = checkbox.getAttribute('data-course-category');
+        if (courseCategory === area) {
+            checkbox.closest('.form-check').style.display = 'block';
+        } else {
+            checkbox.closest('.form-check').style.display = 'none';
+            checkbox.checked = false;
+        }
+    });
+    updatePreview();
+}
+
+function updatePreview() {
+    const selectedCourses = Array.from(document.querySelectorAll('.course-checkbox:checked'));
+    const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked'));
+    const previewDiv = document.getElementById('previewItems');
+    
+    if (selectedCourses.length === 0 || selectedDays.length === 0) {
+        previewDiv.innerHTML = '<small class="text-muted">Ders ve gün seçin...</small>';
+        return;
+    }
+    
+    let previewHtml = '<div class="row">';
+    selectedCourses.forEach(course => {
+        const courseName = course.getAttribute('data-course-name');
+        const courseCategory = course.getAttribute('data-course-category');
+        
+        previewHtml += `<div class="col-md-6 mb-2">
+            <div class="card card-body p-2">
+                <strong>${courseName}</strong> <small class="text-muted">(${courseCategory})</small>
+                <div class="mt-1">
+                    ${selectedDays.map(day => {
+                        const dayNames = {
+                            'monday': 'Pzt',
+                            'tuesday': 'Sal',
+                            'wednesday': 'Çar',
+                            'thursday': 'Per',
+                            'friday': 'Cum',
+                            'saturday': 'Cmt',
+                            'sunday': 'Paz'
+                        };
+                        return `<span class="badge bg-primary me-1">${dayNames[day.value]}</span>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>`;
+    });
+    previewHtml += '</div>';
+    
+    previewDiv.innerHTML = previewHtml;
+}
+
+function addQuickItems() {
+    const selectedCourses = Array.from(document.querySelectorAll('.course-checkbox:checked'));
+    const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked'));
+    
+    if (selectedCourses.length === 0) {
+        alert('Lütfen en az bir ders seçin.');
+        return;
+    }
+    
+    if (selectedDays.length === 0) {
+        alert('Lütfen en az bir gün seçin.');
+        return;
+    }
+    
+    const tbody = document.getElementById('scheduleItems');
+    const emptyRow = tbody.querySelector('.empty-row');
+    if (emptyRow) {
+        emptyRow.style.display = 'none';
+    }
+    
+    // Her ders için her gün için satır oluştur
+    selectedCourses.forEach(course => {
+        selectedDays.forEach(day => {
+            const template = document.getElementById('scheduleItemTemplate');
+            const clone = template.content.cloneNode(true);
+            
+            const html = clone.querySelector('.schedule-item').outerHTML;
+            const updatedHtml = html.replace(/INDEX/g, scheduleItemIndex);
+            
+            tbody.insertAdjacentHTML('beforeend', updatedHtml);
+            
+            // Yeni satırı bul ve değerleri ayarla
+            const newRow = tbody.querySelector('.schedule-item:last-child');
+            const daySelect = newRow.querySelector('.day-select');
+            const courseSelect = newRow.querySelector('.course-select');
+            
+            daySelect.value = day.value;
+            courseSelect.value = course.value;
+            
+            // Alan filtresini uygula
+            const selectedArea = document.getElementById('area').value;
+            if (selectedArea) {
+                updateCourseSelectForArea(courseSelect, selectedArea);
+            }
+            
+            scheduleItemIndex++;
+        });
+    });
+    
+    updateRowNumbers();
+    
+    // Modal'ı kapat
+    const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddModal'));
+    modal.hide();
+    
+    // Seçimleri temizle
+    document.querySelectorAll('.course-checkbox, .day-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updatePreview();
+}
+
+function updateCourseSelectForArea(selectElement, area) {
+    const options = selectElement.querySelectorAll('option');
+    options.forEach(option => {
+        if (option.value === '') return;
+        
+        const courseCategory = option.getAttribute('data-area');
+        if (courseCategory === area) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
 }
 
 // Alan seçildiğinde dersleri filtrele
@@ -457,5 +694,145 @@ document.addEventListener('change', function(e) {
         }
     }
 });
+
+// Hızlı ekleme modal event listener'ları
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('course-checkbox') || e.target.classList.contains('day-checkbox')) {
+        updatePreview();
+    }
+});
+
+// Modal açıldığında alan filtresini uygula
+document.getElementById('quickAddModal').addEventListener('show.bs.modal', function() {
+    const selectedArea = document.getElementById('area').value;
+    if (selectedArea) {
+        filterCoursesInModal(selectedArea);
+    }
+});
 </script>
+
+<style>
+/* Excel Benzeri Tablo Stilleri */
+#scheduleTable {
+    font-size: 0.875rem;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#scheduleTable thead th {
+    background-color: #343a40;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #495057;
+    padding: 8px 4px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#scheduleTable tbody td {
+    padding: 4px;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    background-color: white;
+}
+
+#scheduleTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+#scheduleTable tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+#scheduleTable tbody tr:nth-child(even):hover {
+    background-color: #e9ecef;
+}
+
+/* Form Elemanları */
+#scheduleTable .form-control,
+#scheduleTable .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    height: auto;
+    min-height: 32px;
+}
+
+#scheduleTable .form-control:focus,
+#scheduleTable .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Satır Numarası */
+.row-number {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* Butonlar */
+#scheduleTable .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+}
+
+/* Boş Satır */
+.empty-row td {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    #scheduleTable {
+        font-size: 0.8rem;
+    }
+    
+    #scheduleTable .form-control,
+    #scheduleTable .form-select {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Tablo Scroll */
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+}
+
+/* Excel Benzeri Grid */
+#scheduleTable tbody tr {
+    height: 40px;
+}
+
+#scheduleTable tbody td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Seçili Satır */
+#scheduleTable tbody tr.selected {
+    background-color: #cff4fc;
+    border: 2px solid #0dcaf0;
+}
+
+/* Hover Efektleri */
+#scheduleTable tbody tr:hover .btn {
+    opacity: 1;
+}
+
+#scheduleTable tbody tr .btn {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+</style>
 @endsection

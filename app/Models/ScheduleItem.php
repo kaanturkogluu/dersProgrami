@@ -13,17 +13,12 @@ class ScheduleItem extends Model
         'topic_id',
         'subtopic_id',
         'day_of_week',
-        'start_time',
-        'end_time',
-        'duration_minutes',
         'notes',
         'is_completed',
         'scheduled_date'
     ];
 
     protected $casts = [
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
         'is_completed' => 'boolean',
         'scheduled_date' => 'date'
     ];
@@ -103,17 +98,10 @@ class ScheduleItem extends Model
     }
 
     /**
-     * Süreyi saat:dakika formatında getir
+     * Süreyi saat:dakika formatında getir (artık kullanılmıyor)
      */
     public function getDurationFormattedAttribute()
     {
-        $hours = floor($this->duration_minutes / 60);
-        $minutes = $this->duration_minutes % 60;
-        
-        if ($hours > 0) {
-            return $hours . ' saat ' . $minutes . ' dakika';
-        }
-        
-        return $minutes . ' dakika';
+        return '-';
     }
 }

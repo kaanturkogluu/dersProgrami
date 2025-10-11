@@ -45,15 +45,12 @@ class StudentScheduleController extends Controller
             'student_id' => 'required|exists:students,id',
             'name' => 'required|string|max:255',
             'area' => 'required|in:TYT,AYT,KPSS,DGS,ALES',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
             'description' => 'nullable|string',
             'schedule_items' => 'required|array|min:1',
             'schedule_items.*.course_id' => 'required|exists:courses,id',
             'schedule_items.*.topic_id' => 'nullable|exists:topics,id',
+            'schedule_items.*.subtopic_id' => 'nullable|exists:subtopics,id',
             'schedule_items.*.day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'schedule_items.*.start_time' => 'required|date_format:H:i',
-            'schedule_items.*.end_time' => 'required|date_format:H:i|after:schedule_items.*.start_time',
             'schedule_items.*.notes' => 'nullable|string',
         ]);
 
@@ -62,26 +59,19 @@ class StudentScheduleController extends Controller
             'student_id' => $request->student_id,
             'name' => $request->name,
             'area' => $request->area,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addMonths(3)->format('Y-m-d'),
             'description' => $request->description,
             'is_active' => true,
         ]);
 
         // Program öğelerini oluştur
         foreach ($request->schedule_items as $item) {
-            $startTime = \Carbon\Carbon::createFromFormat('H:i', $item['start_time']);
-            $endTime = \Carbon\Carbon::createFromFormat('H:i', $item['end_time']);
-            $duration = $startTime->diffInMinutes($endTime);
-
             $schedule->scheduleItems()->create([
                 'course_id' => $item['course_id'],
                 'topic_id' => $item['topic_id'] ?? null,
                 'subtopic_id' => $item['subtopic_id'] ?? null,
                 'day_of_week' => $item['day_of_week'],
-                'start_time' => $item['start_time'],
-                'end_time' => $item['end_time'],
-                'duration_minutes' => $duration,
                 'notes' => $item['notes'] ?? null,
             ]);
         }

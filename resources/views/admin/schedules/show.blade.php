@@ -150,13 +150,11 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th style="width: 12%;">Gün</th>
-                            <th style="width: 12%;">Saat</th>
-                            <th style="width: 20%;">Ders</th>
-                            <th style="width: 20%;">Konu</th>
-                            <th style="width: 12%;">Süre</th>
-                            <th style="width: 12%;">Durum</th>
-                            <th style="width: 12%;">Notlar</th>
+                            <th style="width: 15%;">Gün</th>
+                            <th style="width: 25%;">Ders</th>
+                            <th style="width: 25%;">Konu</th>
+                            <th style="width: 20%;">Alt Konu</th>
+                            <th style="width: 15%;">Durum</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -169,7 +167,6 @@
                                             <strong>{{ $item->day_name }}</strong>
                                         </td>
                                     @endif
-                                    <td>{{ $item->start_time->format('H:i') }} - {{ $item->end_time->format('H:i') }}</td>
                                     <td>
                                         <span class="badge bg-secondary">{{ $item->course->name }}</span>
                                     </td>
@@ -181,20 +178,17 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-warning">{{ $item->duration_formatted }}</span>
+                                        @if($item->subtopic)
+                                            <span class="badge bg-primary">{{ $item->subtopic->name }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if($item->is_completed)
                                             <span class="badge bg-success">Tamamlandı</span>
                                         @else
                                             <span class="badge bg-secondary">Bekliyor</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($item->notes)
-                                            <small class="text-muted">{{ Str::limit($item->notes, 30) }}</small>
-                                        @else
-                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                 </tr>
