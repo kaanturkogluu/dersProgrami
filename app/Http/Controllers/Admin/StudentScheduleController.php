@@ -44,7 +44,8 @@ class StudentScheduleController extends Controller
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'name' => 'required|string|max:255',
-            'area' => 'required|in:TYT,AYT,KPSS,DGS,ALES',
+            'areas' => 'required|array|min:1',
+            'areas.*' => 'required|in:TYT,EA,SAY,SOZ,DIL,KPSS',
             'description' => 'nullable|string',
             'schedule_items' => 'required|array|min:1',
             'schedule_items.*.course_id' => 'required|exists:courses,id',
@@ -58,7 +59,7 @@ class StudentScheduleController extends Controller
         $schedule = StudentSchedule::create([
             'student_id' => $request->student_id,
             'name' => $request->name,
-            'area' => $request->area,
+            'areas' => $request->areas,
             'start_date' => now()->format('Y-m-d'),
             'end_date' => now()->addMonths(3)->format('Y-m-d'),
             'description' => $request->description,
@@ -213,19 +214,22 @@ class StudentScheduleController extends Controller
     }
 
     /**
-     * Get courses by area via AJAX.
+     * Get courses by areas via AJAX.
      */
     public function getCoursesByArea(Request $request)
     {
-        $area = $request->get('area');
+        $areasParam = $request->get('areas');
         
-        if (!$area) {
+        if (!$areasParam) {
             return response()->json(['courses' => []]);
         }
         
+        // Virgülle ayrılmış alanları array'e çevir
+        $areas = explode(',', $areasParam);
+        
         $courses = Course::with('category')
-            ->whereHas('category', function($query) use ($area) {
-                $query->where('name', $area);
+            ->whereHas('category', function($query) use ($areas) {
+                $query->whereIn('name', $areas);
             })
             ->where('is_active', true)
             ->orderBy('name')
@@ -253,5 +257,55 @@ class StudentScheduleController extends Controller
             ->paginate(15);
         
         return view('admin.schedules.area-schedules', compact('schedules', 'area'));
+    }
+
+    /**
+     * Programı olan öğrencileri listele
+     */
+    public function studentsWithPrograms()
+    {
+        $students = Student::with(['schedules' => function($query) {
+            $query->where('is_active', true);
+        }])
+        ->whereHas('schedules', function($query) {
+            $query->where('is_active', true);
+        })
+        ->orderBy('first_name')
+        ->get();
+
+        return view('admin.schedules.students-with-programs', compact('students'));
+    }
+
+    /**
+     * Öğrencinin programını takvim şeklinde göster
+     */
+    public function studentCalendar(Student $student)
+    {
+        $schedules = $student->schedules()
+            ->where('is_active', true)
+            ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
+            ->get();
+
+        // Haftalık programı günlere göre grupla
+        $weeklySchedule = collect();
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->scheduleItems as $item) {
+                $weeklySchedule->push([
+                    'schedule_name' => $schedule->name,
+                    'area' => $schedule->area,
+                    'day' => $item->day_of_week,
+                    'day_name' => $item->day_name,
+                    'course' => $item->course,
+                    'topic' => $item->topic,
+                    'subtopic' => $item->subtopic,
+                    'notes' => $item->notes,
+                    'is_completed' => $item->is_completed
+                ]);
+            }
+        }
+
+        $weeklySchedule = $weeklySchedule->groupBy('day');
+
+        return view('admin.schedules.student-calendar', compact('student', 'schedules', 'weeklySchedule'));
     }
 }

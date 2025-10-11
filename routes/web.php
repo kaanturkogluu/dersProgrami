@@ -42,4 +42,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('schedules/courses/by-area', [StudentScheduleController::class, 'getCoursesByArea'])->name('schedules.courses.by-area');
     Route::get('schedules/topics/by-course', [StudentScheduleController::class, 'getTopicsByCourse'])->name('schedules.topics.by-course');
     Route::get('schedules/subtopics/by-topic', [StudentScheduleController::class, 'getSubtopicsByTopic'])->name('schedules.subtopics.by-topic');
+    
+    // Student Programs Overview
+    Route::get('programs/students', [StudentScheduleController::class, 'studentsWithPrograms'])->name('programs.students');
+    Route::get('programs/student/{student}/calendar', [StudentScheduleController::class, 'studentCalendar'])->name('programs.student.calendar');
 });

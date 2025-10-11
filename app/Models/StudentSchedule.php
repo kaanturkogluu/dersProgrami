@@ -11,7 +11,7 @@ class StudentSchedule extends Model
     protected $fillable = [
         'student_id',
         'name',
-        'area',
+        'areas',
         'start_date',
         'end_date',
         'is_active',
@@ -23,6 +23,7 @@ class StudentSchedule extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'is_active' => 'boolean',
+        'areas' => 'array',
         'schedule_data' => 'array'
     ];
 

@@ -58,20 +58,60 @@
             </div>
             
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="mb-3">
-                        <label for="area" class="form-label">Alan <span class="text-danger">*</span></label>
-                        <select class="form-select @error('area') is-invalid @enderror" 
-                                id="area" name="area" required>
-                            <option value="">Alan Seçin</option>
-                            <option value="TYT" {{ old('area') == 'TYT' ? 'selected' : '' }}>TYT</option>
-                            <option value="AYT" {{ old('area') == 'AYT' ? 'selected' : '' }}>AYT</option>
-                            <option value="KPSS" {{ old('area') == 'KPSS' ? 'selected' : '' }}>KPSS</option>
-                            <option value="DGS" {{ old('area') == 'DGS' ? 'selected' : '' }}>DGS</option>
-                            <option value="ALES" {{ old('area') == 'ALES' ? 'selected' : '' }}>ALES</option>
-                        </select>
-                        @error('area')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <label for="areas" class="form-label">Alanlar <span class="text-danger">*</span></label>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Alan Seçimi:</strong> Birden fazla alan seçebilirsiniz. Seçilen alanlara göre dersler filtrelenecektir.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="TYT" id="area_tyt" name="areas[]">
+                                    <label class="form-check-label" for="area_tyt">
+                                        <strong>TYT</strong> - Temel Yeterlilik Testi
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="EA" id="area_ea" name="areas[]">
+                                    <label class="form-check-label" for="area_ea">
+                                        <strong>EA</strong> - Eşit Ağırlık (TYT + AYT EA)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="SAY" id="area_say" name="areas[]">
+                                    <label class="form-check-label" for="area_say">
+                                        <strong>SAY</strong> - Sayısal (TYT + AYT Sayısal)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="SOZ" id="area_soz" name="areas[]">
+                                    <label class="form-check-label" for="area_soz">
+                                        <strong>SÖZ</strong> - Sözel (TYT + AYT Sözel)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="DIL" id="area_dil" name="areas[]">
+                                    <label class="form-check-label" for="area_dil">
+                                        <strong>DİL</strong> - Dil (TYT + YDT)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="KPSS" id="area_kpss" name="areas[]">
+                                    <label class="form-check-label" for="area_kpss">
+                                        <strong>KPSS</strong> - Kamu Personeli Seçme Sınavı
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        @error('areas')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                        @error('areas.*')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -322,15 +362,16 @@ function addScheduleItem() {
     const newCourseSelect = newScheduleItem.querySelector('.course-select');
     const newTopicSelect = newScheduleItem.querySelector('.topic-select');
     const newSubtopicSelect = newScheduleItem.querySelector('.subtopic-select');
-    const selectedArea = document.getElementById('area').value;
+    const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
     
     // Konu ve alt konu seçimlerini temizle
     newTopicSelect.innerHTML = '<option value="">Konu Seçin</option>';
     newSubtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
     
-    if (selectedArea) {
-        // Seçili alana ait dersleri yükle
-        fetch(`{{ route('admin.schedules.courses.by-area') }}?area=${selectedArea}`)
+    if (selectedAreas.length > 0) {
+        // Seçili alanlara ait dersleri yükle
+        const areasParam = selectedAreas.join(',');
+        fetch(`{{ route('admin.schedules.courses.by-area') }}?areas=${areasParam}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -350,7 +391,7 @@ function addScheduleItem() {
                 } else {
                     const option = document.createElement('option');
                     option.value = '';
-                    option.textContent = 'Bu alan için ders bulunamadı';
+                    option.textContent = 'Seçilen alanlar için ders bulunamadı';
                     option.disabled = true;
                     newCourseSelect.appendChild(option);
                 }
@@ -359,6 +400,16 @@ function addScheduleItem() {
                 console.error('Error loading courses:', error);
                 newCourseSelect.innerHTML = '<option value="">Ders yüklenirken hata oluştu</option>';
             });
+    } else {
+        // Hiç alan seçilmediyse tüm dersleri göster
+        newCourseSelect.innerHTML = '<option value="">Ders Seçin</option>';
+        @foreach($courses as $course)
+            const option{{ $course->id }} = document.createElement('option');
+            option{{ $course->id }}.value = '{{ $course->id }}';
+            option{{ $course->id }}.textContent = '{{ $course->name }} ({{ $course->category->name }})';
+            option{{ $course->id }}.setAttribute('data-area', '{{ $course->category->name }}');
+            newCourseSelect.appendChild(option{{ $course->id }});
+        @endforeach
     }
     
     scheduleItemIndex++;
@@ -410,22 +461,33 @@ function showQuickAddModal() {
     modal.show();
     
     // Alan filtresini uygula
-    const selectedArea = document.getElementById('area').value;
-    if (selectedArea) {
-        filterCoursesInModal(selectedArea);
+    const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+    if (selectedAreas.length > 0) {
+        filterCoursesInModal(selectedAreas);
+    } else {
+        // Hiç alan seçilmediyse tüm dersleri göster
+        showAllCoursesInModal();
     }
 }
 
-function filterCoursesInModal(area) {
+function filterCoursesInModal(areas) {
     const courseCheckboxes = document.querySelectorAll('.course-checkbox');
     courseCheckboxes.forEach(checkbox => {
         const courseCategory = checkbox.getAttribute('data-course-category');
-        if (courseCategory === area) {
+        if (areas.includes(courseCategory)) {
             checkbox.closest('.form-check').style.display = 'block';
         } else {
             checkbox.closest('.form-check').style.display = 'none';
             checkbox.checked = false;
         }
+    });
+    updatePreview();
+}
+
+function showAllCoursesInModal() {
+    const courseCheckboxes = document.querySelectorAll('.course-checkbox');
+    courseCheckboxes.forEach(checkbox => {
+        checkbox.closest('.form-check').style.display = 'block';
     });
     updatePreview();
 }
@@ -510,9 +572,12 @@ function addQuickItems() {
             courseSelect.value = course.value;
             
             // Alan filtresini uygula
-            const selectedArea = document.getElementById('area').value;
-            if (selectedArea) {
-                updateCourseSelectForArea(courseSelect, selectedArea);
+            const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+            if (selectedAreas.length > 0) {
+                updateCourseSelectForAreas(courseSelect, selectedAreas);
+            } else {
+                // Hiç alan seçilmediyse tüm dersleri göster
+                showAllCoursesInSelect(courseSelect);
             }
             
             scheduleItemIndex++;
@@ -532,13 +597,13 @@ function addQuickItems() {
     updatePreview();
 }
 
-function updateCourseSelectForArea(selectElement, area) {
+function updateCourseSelectForAreas(selectElement, areas) {
     const options = selectElement.querySelectorAll('option');
     options.forEach(option => {
         if (option.value === '') return;
         
         const courseCategory = option.getAttribute('data-area');
-        if (courseCategory === area) {
+        if (areas.includes(courseCategory)) {
             option.style.display = 'block';
         } else {
             option.style.display = 'none';
@@ -546,15 +611,23 @@ function updateCourseSelectForArea(selectElement, area) {
     });
 }
 
+function showAllCoursesInSelect(selectElement) {
+    const options = selectElement.querySelectorAll('option');
+    options.forEach(option => {
+        option.style.display = 'block';
+    });
+}
+
 // Alan seçildiğinde dersleri filtrele
 document.addEventListener('change', function(e) {
-    if (e.target.id === 'area') {
-        const selectedArea = e.target.value;
+    if (e.target.classList.contains('area-checkbox')) {
+        const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
         const courseSelects = document.querySelectorAll('.course-select');
         
-        if (selectedArea) {
-            // AJAX ile alana ait dersleri getir
-            fetch(`{{ route('admin.schedules.courses.by-area') }}?area=${selectedArea}`)
+        if (selectedAreas.length > 0) {
+            // Seçilen alanları virgülle ayırarak gönder
+            const areasParam = selectedAreas.join(',');
+            fetch(`{{ route('admin.schedules.courses.by-area') }}?areas=${areasParam}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -579,7 +652,7 @@ document.addEventListener('change', function(e) {
                             // Ders bulunamadı mesajı
                             const option = document.createElement('option');
                             option.value = '';
-                            option.textContent = 'Bu alan için ders bulunamadı';
+                            option.textContent = 'Seçilen alanlar için ders bulunamadı';
                             option.disabled = true;
                             select.appendChild(option);
                         }
@@ -592,7 +665,7 @@ document.addEventListener('change', function(e) {
                     });
                 });
         } else {
-            // Alan seçilmediyse tüm dersleri göster
+            // Hiç alan seçilmediyse tüm dersleri göster
             courseSelects.forEach(select => {
                 select.innerHTML = '<option value="">Ders Seçin</option>';
                 @foreach($courses as $course)
@@ -602,6 +675,24 @@ document.addEventListener('change', function(e) {
                     option{{ $course->id }}.setAttribute('data-area', '{{ $course->category->name }}');
                     select.appendChild(option{{ $course->id }});
                 @endforeach
+            });
+        }
+        
+        // Hızlı ekleme modal'ındaki dersleri de güncelle
+        const modalCourseCheckboxes = document.querySelectorAll('#quickAddModal .course-checkbox');
+        if (selectedAreas.length > 0) {
+            modalCourseCheckboxes.forEach(checkbox => {
+                const courseCategory = checkbox.getAttribute('data-course-category');
+                if (selectedAreas.includes(courseCategory)) {
+                    checkbox.closest('.form-check').style.display = 'block';
+                } else {
+                    checkbox.closest('.form-check').style.display = 'none';
+                    checkbox.checked = false;
+                }
+            });
+        } else {
+            modalCourseCheckboxes.forEach(checkbox => {
+                checkbox.closest('.form-check').style.display = 'block';
             });
         }
     }
@@ -704,9 +795,9 @@ document.addEventListener('change', function(e) {
 
 // Modal açıldığında alan filtresini uygula
 document.getElementById('quickAddModal').addEventListener('show.bs.modal', function() {
-    const selectedArea = document.getElementById('area').value;
-    if (selectedArea) {
-        filterCoursesInModal(selectedArea);
+    const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+    if (selectedAreas.length > 0) {
+        filterCoursesInModal(selectedAreas);
     }
 });
 </script>

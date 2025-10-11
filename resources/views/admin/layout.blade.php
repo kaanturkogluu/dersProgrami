@@ -317,6 +317,12 @@
                                 Haftalık Programlar
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}" href="{{ route('admin.programs.students') }}">
+                                <i class="fas fa-users"></i>
+                                Öğrenci Programları
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
