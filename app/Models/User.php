@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
+        'role',
     ];
 
     /**
@@ -43,6 +45,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Admin'in öğrencileri
+     */
+    public function students()
+    {
+        return $this->hasMany(Student::class, 'admin_id');
+    }
+
+    /**
+     * Admin'in aktif öğrencileri
+     */
+    public function activeStudents()
+    {
+        return $this->hasMany(Student::class, 'admin_id')->where('is_active', true);
+    }
+
+    /**
+     * Admin mi kontrolü
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Super admin mi kontrolü
+     */
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
     }
 }

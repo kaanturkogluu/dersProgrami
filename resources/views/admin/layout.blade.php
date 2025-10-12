@@ -323,6 +323,20 @@
                                 Günlük Raporlar
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.mail.*') ? 'active' : '' }}" href="{{ route('admin.mail.index') }}">
+                                <i class="fas fa-envelope"></i>
+                                Mail Yönetimi
+                            </a>
+                        </li>
+                        @if(Auth::user()->isSuperAdmin())
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.admins.*') ? 'active' : '' }}" href="{{ route('admin.admins.index') }}">
+                                <i class="fas fa-users-cog"></i>
+                                Admin Yönetimi
+                            </a>
+                        </li>
+                        @endif
                     </ul>
                     
                     <!-- Kullanıcı Bilgisi ve Çıkış Butonu -->

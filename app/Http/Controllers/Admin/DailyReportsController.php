@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\DailyLessonTracking;
 use App\Models\ScheduleItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DailyReportsController extends Controller
@@ -23,12 +24,24 @@ class DailyReportsController extends Controller
         // Öğrenci filtresi
         $studentFilter = $request->get('student_id');
         
-        // Tüm öğrencileri getir
-        $students = Student::where('is_active', true)->orderBy('first_name')->get();
+        // Öğrencileri getir (admin filtreleme ile)
+        $currentUser = Auth::user();
+        if ($currentUser->isSuperAdmin()) {
+            $students = Student::where('is_active', true)->orderBy('first_name')->get();
+        } else {
+            $students = Student::where('is_active', true)->where('admin_id', $currentUser->id)->orderBy('first_name')->get();
+        }
         
         // Seçilen tarih için takip verilerini getir
         $query = DailyLessonTracking::with(['student', 'scheduleItem.course', 'scheduleItem.topic', 'scheduleItem.subtopic'])
             ->where('tracking_date', $selectedDate);
+            
+        // Admin filtreleme
+        if (!$currentUser->isSuperAdmin()) {
+            $query->whereHas('student', function($q) use ($currentUser) {
+                $q->where('admin_id', $currentUser->id);
+            });
+        }
             
         if ($studentFilter) {
             $query->where('student_id', $studentFilter);
@@ -37,10 +50,19 @@ class DailyReportsController extends Controller
         $trackings = $query->orderBy('created_at', 'desc')->get();
         
         // İstatistikler
+        $scheduleItemsQuery = ScheduleItem::whereHas('schedule', function($q) {
+            $q->where('is_active', true);
+        });
+        
+        // Admin filtreleme için schedule items
+        if (!$currentUser->isSuperAdmin()) {
+            $scheduleItemsQuery->whereHas('schedule.student', function($q) use ($currentUser) {
+                $q->where('admin_id', $currentUser->id);
+            });
+        }
+        
         $stats = [
-            'total_lessons' => ScheduleItem::whereHas('schedule', function($q) {
-                $q->where('is_active', true);
-            })->count(),
+            'total_lessons' => $scheduleItemsQuery->count(),
             'completed_lessons' => $trackings->where('is_completed', true)->count(),
             'total_study_time' => $trackings->sum('study_duration_minutes'),
             'average_understanding' => $trackings->whereNotNull('understanding_score')->avg('understanding_score'),
@@ -75,6 +97,14 @@ class DailyReportsController extends Controller
      */
     public function studentDetail(Request $request, Student $student)
     {
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin() && $student->admin_id !== $currentUser->id) {
+            return redirect()->route('admin.daily-reports.index')
+                ->with('error', 'Bu öğrencinin raporlarını görme yetkiniz bulunmamaktadır.');
+        }
+        
         // Tarih aralığı parametreleri
         $startDate = $request->get('start_date', Carbon::today()->subDays(7)->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));

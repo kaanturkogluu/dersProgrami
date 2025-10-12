@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Http\Controllers\Admin\MailController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class StudentController extends Controller
 {
@@ -13,7 +15,15 @@ class StudentController extends Controller
      */
     public function index()
     {
-        $students = Student::latest()->paginate(15);
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if ($currentUser->isSuperAdmin()) {
+            $students = Student::with('admin')->latest()->paginate(15);
+        } else {
+            $students = Student::where('admin_id', $currentUser->id)->with('admin')->latest()->paginate(15);
+        }
+        
         return view('admin.students.index', compact('students'));
     }
 
@@ -38,12 +48,20 @@ class StudentController extends Controller
             'birth_date' => 'nullable|date',
             'student_number' => 'required|string|unique:students,student_number',
             'address' => 'nullable|string',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
-        Student::create($request->all());
+        $data = $request->all();
+        $data['password'] = bcrypt($request->password);
+        $data['admin_id'] = Auth::user()->id; // Mevcut admin'e atanır
+
+        $student = Student::create($data);
+
+        // Otomatik hoş geldiniz maili gönder
+        MailController::sendWelcomeToNewStudent($student);
 
         return redirect()->route('admin.students.index')
-            ->with('success', 'Öğrenci başarıyla kaydedildi.');
+            ->with('success', 'Öğrenci başarıyla kaydedildi. Sistem giriş şifresi de oluşturuldu ve hoş geldiniz maili gönderildi.');
     }
 
     /**

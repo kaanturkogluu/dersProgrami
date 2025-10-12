@@ -70,6 +70,17 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     // Daily Reports
     Route::get('daily-reports', [\App\Http\Controllers\Admin\DailyReportsController::class, 'index'])->name('daily-reports.index');
     Route::get('daily-reports/student/{student}', [\App\Http\Controllers\Admin\DailyReportsController::class, 'studentDetail'])->name('daily-reports.student');
+    
+    // Admin Management
+    Route::resource('admins', \App\Http\Controllers\Admin\AdminController::class);
+    
+    // Mail Management
+    Route::get('mail', [\App\Http\Controllers\Admin\MailController::class, 'index'])->name('mail.index');
+    Route::post('mail/send-welcome', [\App\Http\Controllers\Admin\MailController::class, 'sendWelcome'])->name('mail.send-welcome');
+    Route::post('mail/send-daily-reminder', [\App\Http\Controllers\Admin\MailController::class, 'sendDailyReminder'])->name('mail.send-daily-reminder');
+    Route::post('mail/send-daily-reminder-all', [\App\Http\Controllers\Admin\MailController::class, 'sendDailyReminderToAll'])->name('mail.send-daily-reminder-all');
+    Route::post('mail/send-test', [\App\Http\Controllers\Admin\MailController::class, 'sendTestMail'])->name('mail.send-test');
+    Route::post('mail/test-connection', [\App\Http\Controllers\Admin\MailController::class, 'testConnection'])->name('mail.test-connection');
 });
 
 // Student Routes

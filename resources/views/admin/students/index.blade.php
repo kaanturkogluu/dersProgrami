@@ -43,6 +43,10 @@
                             <th>Email</th>
                             <th>Telefon</th>
                             <th>Doğum Tarihi</th>
+                            <th>Şifre</th>
+                            @if(Auth::user()->isSuperAdmin())
+                            <th>Admin</th>
+                            @endif
                             <th>Durum</th>
                             <th>Kayıt Tarihi</th>
                             <th>İşlemler</th>
@@ -89,6 +93,33 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
+                            <td>
+                                @if($student->password)
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-key me-1"></i>
+                                        Var
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Yok
+                                    </span>
+                                @endif
+                            </td>
+                            @if(Auth::user()->isSuperAdmin())
+                            <td>
+                                @if($student->admin)
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                                            {{ substr($student->admin->name, 0, 1) }}
+                                        </div>
+                                        <span class="small">{{ $student->admin->name }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-muted small">Atanmamış</span>
+                                @endif
+                            </td>
+                            @endif
                             <td>
                                 @if($student->is_active)
                                     <span class="badge bg-success">Aktif</span>

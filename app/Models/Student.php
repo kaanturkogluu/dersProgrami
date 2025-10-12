@@ -16,7 +16,8 @@ class Student extends Model
         'birth_date',
         'student_number',
         'address',
-        'is_active'
+        'is_active',
+        'admin_id'
     ];
 
     protected $casts = [
@@ -43,5 +44,13 @@ class Student extends Model
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->last_name;
+    }
+
+    /**
+     * Öğrencinin admin'i
+     */
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'admin_id');
     }
 }

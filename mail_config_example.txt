@@ -1,0 +1,71 @@
+# ============================================
+# PHPMailer Mail Konfigürasyonu
+# ============================================
+# Bu dosyayı .env dosyasına kopyalayın ve değerleri kendi ayarlarınızla değiştirin
+
+# SMTP Sunucu Ayarları
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+
+# Gönderen Bilgileri
+MAIL_FROM_ADDRESS=your-email@gmail.com
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Gelişmiş Ayarlar
+MAIL_TIMEOUT=30
+MAIL_DEBUG=false
+MAIL_CHARSET=UTF-8
+
+# ============================================
+# Popüler Mail Sağlayıcıları
+# ============================================
+
+# Gmail
+# MAIL_HOST=smtp.gmail.com
+# MAIL_PORT=587
+# MAIL_ENCRYPTION=tls
+# MAIL_USERNAME=your-email@gmail.com
+# MAIL_PASSWORD=your-app-password
+
+# Outlook/Hotmail
+# MAIL_HOST=smtp-mail.outlook.com
+# MAIL_PORT=587
+# MAIL_ENCRYPTION=tls
+# MAIL_USERNAME=your-email@outlook.com
+# MAIL_PASSWORD=your-password
+
+# Yahoo
+# MAIL_HOST=smtp.mail.yahoo.com
+# MAIL_PORT=587
+# MAIL_ENCRYPTION=tls
+# MAIL_USERNAME=your-email@yahoo.com
+# MAIL_PASSWORD=your-app-password
+
+# Yandex
+# MAIL_HOST=smtp.yandex.com
+# MAIL_PORT=587
+# MAIL_ENCRYPTION=tls
+# MAIL_USERNAME=your-email@yandex.com
+# MAIL_PASSWORD=your-password
+
+# ============================================
+# Önemli Notlar
+# ============================================
+# 1. Gmail için App Password kullanın (2FA aktif olmalı)
+# 2. Port 587 genellikle TLS için kullanılır
+# 3. Port 465 SSL için kullanılır (MAIL_ENCRYPTION=ssl)
+# 4. MAIL_DEBUG=true sadece geliştirme ortamında kullanın
+# 5. MAIL_TIMEOUT değeri saniye cinsindendir
+# 6. MAIL_CHARSET=UTF-8 Türkçe karakterler için önemlidir
+
+# ============================================
+# Güvenlik Uyarıları
+# ============================================
+# - Şifrelerinizi .env dosyasında saklayın
+# - .env dosyasını git'e commit etmeyin
+# - Production ortamında MAIL_DEBUG=false yapın
+# - App Password kullanın, normal şifre değil
+# - SMTP sunucunuzun güvenlik ayarlarını kontrol edin

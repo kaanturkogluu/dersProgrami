@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\Topic;
 use App\Models\Subtopic;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class StudentScheduleController extends Controller
 {
@@ -27,7 +28,15 @@ class StudentScheduleController extends Controller
      */
     public function create(Request $request)
     {
-        $students = Student::where('is_active', true)->get();
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if ($currentUser->isSuperAdmin()) {
+            $students = Student::where('is_active', true)->get();
+        } else {
+            $students = Student::where('is_active', true)->where('admin_id', $currentUser->id)->get();
+        }
+        
         $courses = Course::with('category')->where('is_active', true)->get();
         $selectedStudentId = $request->get('student_id');
         
@@ -348,6 +357,7 @@ class StudentScheduleController extends Controller
      */
     public function studentsWithPrograms(Request $request)
     {
+        $currentUser = Auth::user();
         $areaFilter = $request->get('area');
         
         $query = Student::with(['schedules' => function($query) use ($areaFilter) {
@@ -363,16 +373,27 @@ class StudentScheduleController extends Controller
             }
         });
 
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin()) {
+            $query->where('admin_id', $currentUser->id);
+        }
+
         $students = $query->orderBy('first_name')->get();
 
-        // İstatistikler için tüm öğrencileri al
-        $allStudents = Student::with(['schedules' => function($query) {
+        // İstatistikler için öğrencileri al
+        $allStudentsQuery = Student::with(['schedules' => function($query) {
             $query->where('is_active', true);
         }])
         ->whereHas('schedules', function($query) {
             $query->where('is_active', true);
-        })
-        ->get();
+        });
+
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin()) {
+            $allStudentsQuery->where('admin_id', $currentUser->id);
+        }
+
+        $allStudents = $allStudentsQuery->get();
 
         return view('admin.schedules.students-with-programs', compact('students', 'allStudents', 'areaFilter'));
     }
@@ -382,6 +403,14 @@ class StudentScheduleController extends Controller
      */
     public function studentCalendar(Student $student)
     {
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin() && $student->admin_id !== $currentUser->id) {
+            return redirect()->route('admin.programs.students')
+                ->with('error', 'Bu öğrencinin programını görme yetkiniz bulunmamaktadır.');
+        }
+        
         $schedules = $student->schedules()
             ->where('is_active', true)
             ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
@@ -426,6 +455,14 @@ class StudentScheduleController extends Controller
      */
     public function studentCalendarEdit(Student $student)
     {
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin() && $student->admin_id !== $currentUser->id) {
+            return redirect()->route('admin.programs.students')
+                ->with('error', 'Bu öğrencinin programını düzenleme yetkiniz bulunmamaktadır.');
+        }
+        
         $schedules = $student->schedules()
             ->where('is_active', true)
             ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])

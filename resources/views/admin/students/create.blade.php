@@ -101,6 +101,33 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Sistem Giriş Şifresi <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                       id="password" name="password" value="{{ old('password') }}" 
+                                       placeholder="Öğrenci giriş şifresi" required>
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Öğrencinin sisteme giriş yapabilmesi için şifre.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password_confirmation" class="form-label">Şifre Tekrarı <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" 
+                                       id="password_confirmation" name="password_confirmation" value="{{ old('password_confirmation') }}" 
+                                       placeholder="Şifreyi tekrar girin" required>
+                                @error('password_confirmation')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Şifreyi doğrulamak için tekrar girin.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label for="address" class="form-label">Adres</label>
                         <textarea class="form-control @error('address') is-invalid @enderror" 
