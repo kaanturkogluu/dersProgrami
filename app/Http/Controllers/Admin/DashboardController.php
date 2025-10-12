@@ -27,4 +27,16 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', compact('stats', 'recentStudents', 'recentCourses'));
     }
+
+    /**
+     * Admin çıkış işlemi
+     */
+    public function logout()
+    {
+        // Admin oturumunu temizle (eğer varsa)
+        session()->flush();
+        
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Admin oturumu başarıyla sonlandırıldı.');
+    }
 }

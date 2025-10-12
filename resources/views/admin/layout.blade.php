@@ -312,18 +312,39 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.schedules.*') ? 'active' : '' }}" href="{{ route('admin.schedules.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.programs.*') || request()->routeIs('admin.schedules.*') ? 'active' : '' }}" href="{{ route('admin.programs.students') }}">
                                 <i class="fas fa-calendar-alt"></i>
-                                Haftalık Programlar
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}" href="{{ route('admin.programs.students') }}">
-                                <i class="fas fa-users"></i>
                                 Öğrenci Programları
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.daily-reports.*') ? 'active' : '' }}" href="{{ route('admin.daily-reports.index') }}">
+                                <i class="fas fa-chart-line"></i>
+                                Günlük Raporlar
+                            </a>
+                        </li>
                     </ul>
+                    
+                    <!-- Kullanıcı Bilgisi ve Çıkış Butonu -->
+                    <div class="mt-auto p-3">
+                        <!-- Kullanıcı Bilgisi -->
+                        <div class="text-center mb-3">
+                            <div class="text-white-50 small">
+                                <i class="fas fa-user-shield me-1"></i>
+                                Hoş geldiniz, {{ Auth::user()->name }}
+                            </div>
+                        </div>
+                        
+                        <!-- Çıkış Butonu -->
+                        <form method="POST" action="{{ route('admin.logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-light w-100" 
+                                    onclick="return confirm('Çıkış yapmak istediğinizden emin misiniz?')">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Çıkış Yap
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </nav>
 

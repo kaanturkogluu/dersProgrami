@@ -8,6 +8,12 @@
         <i class="fas fa-tachometer-alt me-2"></i>
         Dashboard
     </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ route('student.login') }}" class="btn btn-outline-primary">
+            <i class="fas fa-user-graduate me-2"></i>
+            Öğrenci Girişi
+        </a>
+    </div>
 </div>
 
 <!-- Stats Cards -->

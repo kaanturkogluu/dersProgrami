@@ -18,6 +18,12 @@
                 <i class="fas fa-arrow-left me-2"></i>
                 Öğrenci Listesi
             </a>
+            @if($weeklySchedule->count() > 0)
+                <a href="{{ route('admin.programs.student.calendar.edit', $student) }}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>
+                    Programı Düzenle
+                </a>
+            @endif
             <a href="{{ route('admin.schedules.create', ['student_id' => $student->id]) }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>
                 Yeni Program Ekle
@@ -43,7 +49,7 @@
                                 {{ $student->student_number }}
                             </p>
                             <div class="d-flex flex-wrap gap-2">
-                                @foreach($schedules->pluck('area')->unique() as $area)
+                                @foreach($schedules->pluck('areas')->flatten()->unique() as $area)
                                     <span class="badge bg-{{ $area == 'TYT' ? 'primary' : ($area == 'AYT' ? 'success' : ($area == 'KPSS' ? 'warning' : ($area == 'DGS' ? 'info' : 'secondary'))) }} fs-6">
                                         {{ $area }}
                                     </span>

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\StudentController;
@@ -10,11 +11,23 @@ use App\Http\Controllers\Admin\SubtopicController;
 use App\Http\Controllers\Admin\StudentScheduleController;
 
 Route::get('/', function () {
-    return redirect()->route('admin.dashboard');
+    // Eğer admin giriş yapmışsa dashboard'a, yoksa login'e yönlendir
+    if (Auth::check()) {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('admin.login');
 });
 
-// Admin Routes
+// Admin Authentication Routes
 Route::prefix('admin')->name('admin.')->group(function () {
+    // Giriş sayfaları (middleware olmadan)
+    Route::get('login', [\App\Http\Controllers\Admin\AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [\App\Http\Controllers\Admin\AuthController::class, 'login'])->name('login.post');
+    Route::post('logout', [\App\Http\Controllers\Admin\AuthController::class, 'logout'])->name('logout');
+});
+
+// Admin Protected Routes
+Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
     // Categories
@@ -49,4 +62,30 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Student Programs Overview
     Route::get('programs/students', [StudentScheduleController::class, 'studentsWithPrograms'])->name('programs.students');
     Route::get('programs/student/{student}/calendar', [StudentScheduleController::class, 'studentCalendar'])->name('programs.student.calendar');
+            Route::get('programs/student/{student}/calendar/edit', [StudentScheduleController::class, 'studentCalendarEdit'])->name('programs.student.calendar.edit');
+            Route::put('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'updateScheduleItems'])->name('programs.student.schedule-items.update');
+            Route::post('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'createScheduleItem'])->name('programs.student.schedule-items.create');
+    Route::post('programs/student/{student}/calendar/update', [StudentScheduleController::class, 'studentCalendarUpdate'])->name('programs.student.calendar.update');
+    
+    // Daily Reports
+    Route::get('daily-reports', [\App\Http\Controllers\Admin\DailyReportsController::class, 'index'])->name('daily-reports.index');
+    Route::get('daily-reports/student/{student}', [\App\Http\Controllers\Admin\DailyReportsController::class, 'studentDetail'])->name('daily-reports.student');
+});
+
+// Student Routes
+Route::prefix('student')->name('student.')->group(function () {
+    // Authentication
+    Route::get('login', [\App\Http\Controllers\Student\AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [\App\Http\Controllers\Student\AuthController::class, 'login'])->name('login.post');
+    Route::post('logout', [\App\Http\Controllers\Student\AuthController::class, 'logout'])->name('logout');
+    
+    // Dashboard
+    Route::get('dashboard', [\App\Http\Controllers\Student\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('previous-lessons', [\App\Http\Controllers\Student\DashboardController::class, 'previousLessons'])->name('previous-lessons');
+    
+    // Daily Tracking
+    Route::get('daily-tracking', [\App\Http\Controllers\Student\DailyTrackingController::class, 'index'])->name('daily-tracking');
+    Route::post('daily-tracking', [\App\Http\Controllers\Student\DailyTrackingController::class, 'store'])->name('daily-tracking.store');
+    Route::put('daily-tracking/{tracking}', [\App\Http\Controllers\Student\DailyTrackingController::class, 'update'])->name('daily-tracking.update');
+    Route::delete('daily-tracking/{tracking}', [\App\Http\Controllers\Student\DailyTrackingController::class, 'destroy'])->name('daily-tracking.destroy');
 });

@@ -18,11 +18,8 @@ class StudentScheduleController extends Controller
      */
     public function index()
     {
-        $schedules = StudentSchedule::with(['student', 'scheduleItems.course', 'scheduleItems.topic'])
-            ->latest()
-            ->paginate(15);
-        
-        return view('admin.schedules.index', compact('schedules'));
+        // Redirect to programs page
+        return redirect()->route('admin.programs.students');
     }
 
     /**
@@ -170,7 +167,7 @@ class StudentScheduleController extends Controller
         
         $topics = Topic::where('course_id', $courseId)
             ->where('is_active', true)
-            ->orderBy('order_index')
+            ->orderBy('name')
             ->get();
         
         return response()->json([
@@ -197,7 +194,7 @@ class StudentScheduleController extends Controller
         
         $subtopics = Subtopic::where('topic_id', $topicId)
             ->where('is_active', true)
-            ->orderBy('order_index')
+            ->orderBy('name')
             ->get();
         
         return response()->json([
@@ -208,6 +205,95 @@ class StudentScheduleController extends Controller
                     'duration_minutes' => $subtopic->duration_minutes
                 ];
             })
+        ]);
+    }
+
+    /**
+     * Update schedule items for a student
+     */
+    public function updateScheduleItems(Request $request, Student $student)
+    {
+        $request->validate([
+            'schedule_items' => 'required|array',
+            'schedule_items.*.id' => 'required|exists:schedule_items,id',
+            'schedule_items.*.course_id' => 'required|exists:courses,id',
+            'schedule_items.*.topic_id' => 'nullable|exists:topics,id',
+            'schedule_items.*.subtopic_id' => 'nullable|exists:subtopics,id',
+            'schedule_items.*.notes' => 'nullable|string',
+            'schedule_items.*.is_completed' => 'boolean',
+            'schedule_items.*._delete' => 'boolean',
+        ]);
+
+        $scheduleItems = $request->input('schedule_items', []);
+        
+        foreach ($scheduleItems as $itemData) {
+            $scheduleItem = ScheduleItem::find($itemData['id']);
+            
+            if (!$scheduleItem) {
+                continue;
+            }
+            
+            // Eğer silme işareti varsa
+            if (isset($itemData['_delete']) && $itemData['_delete']) {
+                $scheduleItem->delete();
+                continue;
+            }
+            
+            // Güncelle
+            $scheduleItem->update([
+                'course_id' => $itemData['course_id'],
+                'topic_id' => $itemData['topic_id'] ?? null,
+                'subtopic_id' => $itemData['subtopic_id'] ?? null,
+                'notes' => $itemData['notes'] ?? null,
+                'is_completed' => isset($itemData['is_completed']) ? (bool)$itemData['is_completed'] : false,
+            ]);
+        }
+
+        return redirect()->route('admin.programs.student.calendar', $student)
+            ->with('success', 'Program başarıyla güncellendi.');
+    }
+
+    /**
+     * Create new schedule item for a student
+     */
+    public function createScheduleItem(Request $request, Student $student)
+    {
+        $request->validate([
+            'day_of_week' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'row_index' => 'required|integer|min:0',
+            'course_id' => 'required|exists:courses,id',
+            'topic_id' => 'nullable|exists:topics,id',
+            'subtopic_id' => 'nullable|exists:subtopics,id',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Öğrencinin aktif programını bul
+        $schedule = $student->schedules()
+            ->where('is_active', true)
+            ->first();
+
+        if (!$schedule) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Öğrenci için aktif program bulunamadı.'
+            ], 400);
+        }
+
+        // Yeni schedule item oluştur
+        $scheduleItem = ScheduleItem::create([
+            'schedule_id' => $schedule->id,
+            'course_id' => $request->course_id,
+            'topic_id' => $request->topic_id,
+            'subtopic_id' => $request->subtopic_id,
+            'day_of_week' => $request->day_of_week,
+            'notes' => $request->notes,
+            'is_completed' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ders başarıyla eklendi.',
+            'schedule_item' => $scheduleItem
         ]);
     }
 
@@ -250,7 +336,7 @@ class StudentScheduleController extends Controller
     public function areaSchedules($area)
     {
         $schedules = StudentSchedule::with(['student', 'scheduleItems.course'])
-            ->where('area', $area)
+            ->whereJsonContains('areas', $area)
             ->latest()
             ->paginate(15);
         
@@ -260,18 +346,35 @@ class StudentScheduleController extends Controller
     /**
      * Programı olan öğrencileri listele
      */
-    public function studentsWithPrograms()
+    public function studentsWithPrograms(Request $request)
     {
-        $students = Student::with(['schedules' => function($query) {
+        $areaFilter = $request->get('area');
+        
+        $query = Student::with(['schedules' => function($query) use ($areaFilter) {
+            $query->where('is_active', true);
+            if ($areaFilter) {
+                $query->whereJsonContains('areas', $areaFilter);
+            }
+        }])
+        ->whereHas('schedules', function($query) use ($areaFilter) {
+            $query->where('is_active', true);
+            if ($areaFilter) {
+                $query->whereJsonContains('areas', $areaFilter);
+            }
+        });
+
+        $students = $query->orderBy('first_name')->get();
+
+        // İstatistikler için tüm öğrencileri al
+        $allStudents = Student::with(['schedules' => function($query) {
             $query->where('is_active', true);
         }])
         ->whereHas('schedules', function($query) {
             $query->where('is_active', true);
         })
-        ->orderBy('first_name')
         ->get();
 
-        return view('admin.schedules.students-with-programs', compact('students'));
+        return view('admin.schedules.students-with-programs', compact('students', 'allStudents', 'areaFilter'));
     }
 
     /**
@@ -290,7 +393,7 @@ class StudentScheduleController extends Controller
             foreach ($schedule->scheduleItems as $item) {
                 $weeklySchedule->push([
                     'schedule_name' => $schedule->name,
-                    'area' => $schedule->area,
+                    'area' => $schedule->areas[0] ?? 'TYT', // İlk alanı kullan
                     'day' => $item->day_of_week,
                     'day_name' => $item->day_name,
                     'course' => $item->course,
@@ -316,5 +419,81 @@ class StudentScheduleController extends Controller
         
         return redirect()->back()
             ->with('success', 'Program öğesi başarıyla silindi.');
+    }
+
+    /**
+     * Öğrencinin programını Excel formatında düzenle
+     */
+    public function studentCalendarEdit(Student $student)
+    {
+        $schedules = $student->schedules()
+            ->where('is_active', true)
+            ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
+            ->get();
+
+        // Tüm dersleri getir
+        $courses = Course::with('category')->where('is_active', true)->get();
+        
+        // Tüm konuları getir
+        $topics = Topic::with('course')->where('is_active', true)->get();
+        
+        // Tüm alt konuları getir
+        $subtopics = Subtopic::with('topic')->where('is_active', true)->get();
+
+        // Haftalık programı günlere göre grupla
+        $weeklySchedule = collect();
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->scheduleItems as $item) {
+                $weeklySchedule->push([
+                    'id' => $item->id,
+                    'schedule_id' => $schedule->id,
+                    'schedule_name' => $schedule->name,
+                    'area' => $schedule->areas[0] ?? 'TYT', // İlk alanı kullan
+                    'day' => $item->day_of_week,
+                    'day_name' => $item->day_name,
+                    'course' => $item->course,
+                    'topic' => $item->topic,
+                    'subtopic' => $item->subtopic,
+                    'notes' => $item->notes,
+                    'is_completed' => $item->is_completed
+                ]);
+            }
+        }
+
+        $weeklySchedule = $weeklySchedule->groupBy('day');
+
+        return view('admin.schedules.student-calendar-edit', compact('student', 'schedules', 'weeklySchedule', 'courses', 'topics', 'subtopics'));
+    }
+
+    /**
+     * Öğrencinin programını güncelle
+     */
+    public function studentCalendarUpdate(Request $request, Student $student)
+    {
+        $request->validate([
+            'schedule_items' => 'required|array',
+            'schedule_items.*.id' => 'required|exists:schedule_items,id',
+            'schedule_items.*.course_id' => 'required|exists:courses,id',
+            'schedule_items.*.topic_id' => 'nullable|exists:topics,id',
+            'schedule_items.*.subtopic_id' => 'nullable|exists:subtopics,id',
+            'schedule_items.*.notes' => 'nullable|string',
+            'schedule_items.*.is_completed' => 'boolean',
+        ]);
+
+        foreach ($request->schedule_items as $itemData) {
+            $scheduleItem = ScheduleItem::find($itemData['id']);
+            if ($scheduleItem) {
+                $scheduleItem->update([
+                    'course_id' => $itemData['course_id'],
+                    'topic_id' => $itemData['topic_id'] ?? null,
+                    'subtopic_id' => $itemData['subtopic_id'] ?? null,
+                    'notes' => $itemData['notes'] ?? null,
+                    'is_completed' => $itemData['is_completed'] ?? false,
+                ]);
+            }
+        }
+
+        return redirect()->route('admin.programs.student.calendar', $student)
+            ->with('success', 'Program başarıyla güncellendi.');
     }
 }

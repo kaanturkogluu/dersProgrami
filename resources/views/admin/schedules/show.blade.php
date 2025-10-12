@@ -18,7 +18,7 @@
         </div>
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ route('admin.schedules.index') }}" class="btn btn-outline-secondary me-2">
+        <a href="{{ route('admin.programs.students') }}" class="btn btn-outline-secondary me-2">
             <i class="fas fa-arrow-left me-2"></i>
             Geri Dön
         </a>

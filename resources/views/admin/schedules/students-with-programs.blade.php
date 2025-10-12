@@ -14,14 +14,64 @@
             <p class="text-muted mb-0">Programı olan öğrencileri görüntüleyin ve programlarını inceleyin</p>
         </div>
         <div>
-            <a href="{{ route('admin.schedules.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>
-                Tüm Programlar
-            </a>
             <a href="{{ route('admin.schedules.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>
                 Yeni Program
             </a>
+        </div>
+    </div>
+
+    <!-- Program Türü Filtreleri -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Program Türü Filtreleri</h6>
+                    <div class="btn-group" role="group">
+                        <a href="{{ route('admin.programs.students') }}" 
+                           class="btn {{ !$areaFilter ? 'btn-primary' : 'btn-outline-primary' }}">
+                            <i class="fas fa-list me-1"></i>
+                            Tümü
+                        </a>
+                        <a href="{{ route('admin.programs.students', ['area' => 'TYT']) }}" 
+                           class="btn {{ $areaFilter == 'TYT' ? 'btn-primary' : 'btn-outline-primary' }}">
+                            <i class="fas fa-graduation-cap me-1"></i>
+                            TYT
+                        </a>
+                        <a href="{{ route('admin.programs.students', ['area' => 'AYT']) }}" 
+                           class="btn {{ $areaFilter == 'AYT' ? 'btn-primary' : 'btn-outline-primary' }}">
+                            <i class="fas fa-university me-1"></i>
+                            AYT
+                        </a>
+                        <a href="{{ route('admin.programs.students', ['area' => 'KPSS']) }}" 
+                           class="btn {{ $areaFilter == 'KPSS' ? 'btn-primary' : 'btn-outline-primary' }}">
+                            <i class="fas fa-briefcase me-1"></i>
+                            KPSS
+                        </a>
+                        <a href="{{ route('admin.programs.students', ['area' => 'DGS']) }}" 
+                           class="btn {{ $areaFilter == 'DGS' ? 'btn-primary' : 'btn-outline-primary' }}">
+                            <i class="fas fa-chart-line me-1"></i>
+                            DGS
+                        </a>
+                        <a href="{{ route('admin.programs.students', ['area' => 'ALES']) }}" 
+                           class="btn {{ $areaFilter == 'ALES' ? 'btn-primary' : 'btn-outline-primary' }}">
+                            <i class="fas fa-book me-1"></i>
+                            ALES
+                        </a>
+                    </div>
+                    @if($areaFilter)
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-filter me-1"></i>
+                                <strong>{{ $areaFilter }}</strong> program türüne göre filtreleniyor
+                                <a href="{{ route('admin.programs.students') }}" class="ms-2 text-decoration-none">
+                                    <i class="fas fa-times"></i> Filtreyi Kaldır
+                                </a>
+                            </small>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
@@ -36,7 +86,7 @@
                                 Toplam Öğrenci
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $students->count() }}
+                                {{ $allStudents->count() }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -56,7 +106,7 @@
                                 Toplam Program
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $students->sum(function($student) { return $student->schedules->count(); }) }}
+                                {{ $allStudents->sum(function($student) { return $student->schedules->count(); }) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -76,7 +126,7 @@
                                 Aktif Program
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $students->sum(function($student) { return $student->schedules->where('is_active', true)->count(); }) }}
+                                {{ $allStudents->sum(function($student) { return $student->schedules->where('is_active', true)->count(); }) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -96,7 +146,7 @@
                                 Ortalama Program
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $students->count() > 0 ? round($students->sum(function($student) { return $student->schedules->count(); }) / $students->count(), 1) : 0 }}
+                                {{ $allStudents->count() > 0 ? round($allStudents->sum(function($student) { return $student->schedules->count(); }) / $allStudents->count(), 1) : 0 }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -108,13 +158,25 @@
         </div>
     </div>
 
+    <!-- Filtrelenmiş Sonuçlar Bilgisi -->
+    @if($areaFilter && $students->count() > 0)
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>{{ $areaFilter }}</strong> program türü için <strong>{{ $students->count() }}</strong> öğrenci bulundu.
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Öğrenci Kartları -->
     @if($students->count() > 0)
         <div class="row">
             @foreach($students as $student)
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 student-card" style="cursor: pointer; transition: all 0.3s ease;" 
-                     onclick="window.location.href='{{ route('admin.programs.student.calendar', $student) }}'">
+                     data-href="{{ route('admin.programs.student.calendar', $student) }}">
                     <div class="card-header d-flex align-items-center">
                         <div class="student-avatar me-3">
                             <div class="avatar-circle">
@@ -150,7 +212,7 @@
                         <div class="mb-3">
                             <h6 class="text-muted mb-2">Program Alanları:</h6>
                             <div class="d-flex flex-wrap gap-1">
-                                @foreach($student->schedules->pluck('area')->unique() as $area)
+                                @foreach($student->schedules->pluck('areas')->flatten()->unique() as $area)
                                     <span class="badge bg-{{ $area == 'TYT' ? 'primary' : ($area == 'AYT' ? 'success' : ($area == 'KPSS' ? 'warning' : ($area == 'DGS' ? 'info' : 'secondary'))) }}">
                                         {{ $area }}
                                     </span>
@@ -193,13 +255,27 @@
     @else
         <!-- Boş Durum -->
         <div class="text-center py-5">
-            <i class="fas fa-users fa-4x text-muted mb-4"></i>
-            <h4 class="text-muted">Henüz programı olan öğrenci bulunmuyor</h4>
-            <p class="text-muted mb-4">Öğrenciler için program oluşturmaya başlayın.</p>
-            <a href="{{ route('admin.schedules.create') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>
-                İlk Programı Oluştur
-            </a>
+            @if($areaFilter)
+                <i class="fas fa-filter fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">{{ $areaFilter }} program türü için öğrenci bulunamadı</h4>
+                <p class="text-muted mb-4">Bu program türü için henüz öğrenci programı oluşturulmamış.</p>
+                <a href="{{ route('admin.programs.students') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-list me-2"></i>
+                    Tüm Programları Gör
+                </a>
+                <a href="{{ route('admin.schedules.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Yeni Program Oluştur
+                </a>
+            @else
+                <i class="fas fa-users fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">Henüz programı olan öğrenci bulunmuyor</h4>
+                <p class="text-muted mb-4">Öğrenciler için program oluşturmaya başlayın.</p>
+                <a href="{{ route('admin.schedules.create') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>
+                    İlk Programı Oluştur
+                </a>
+            @endif
         </div>
     @endif
 </div>
@@ -287,4 +363,15 @@
     border-radius: 0 0 0.35rem 0.35rem !important;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Student card click handlers
+    document.querySelectorAll('.student-card[data-href]').forEach(function(card) {
+        card.addEventListener('click', function() {
+            window.location.href = this.dataset.href;
+        });
+    });
+});
+</script>
 @endsection

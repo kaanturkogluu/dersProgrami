@@ -9,7 +9,7 @@
         Yeni Haftalık Program Oluştur
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ route('admin.schedules.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ route('admin.programs.students') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>
             Geri Dön
         </a>
@@ -552,9 +552,15 @@ function addQuickItems() {
         emptyRow.style.display = 'none';
     }
     
-    // Her ders için her gün için satır oluştur
-    selectedCourses.forEach(course => {
-        selectedDays.forEach(day => {
+    // Günleri sıralı hale getir
+    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const sortedDays = selectedDays.sort((a, b) => {
+        return dayOrder.indexOf(a.value) - dayOrder.indexOf(b.value);
+    });
+    
+    // Gün bazında sıralama: Önce tüm Pazartesi'ler, sonra tüm Salı'lar, vb.
+    sortedDays.forEach(day => {
+        selectedCourses.forEach(course => {
             const template = document.getElementById('scheduleItemTemplate');
             const clone = template.content.cloneNode(true);
             
@@ -578,6 +584,11 @@ function addQuickItems() {
             } else {
                 // Hiç alan seçilmediyse tüm dersleri göster
                 showAllCoursesInSelect(courseSelect);
+            }
+            
+            // Ders seçildiğinde konuları yükle
+            if (course.value) {
+                loadTopicsForCourse(courseSelect, newRow);
             }
             
             scheduleItemIndex++;
@@ -616,6 +627,47 @@ function showAllCoursesInSelect(selectElement) {
     options.forEach(option => {
         option.style.display = 'block';
     });
+}
+
+function loadTopicsForCourse(courseSelect, scheduleItem) {
+    const courseId = courseSelect.value;
+    const topicSelect = scheduleItem.querySelector('.topic-select');
+    const subtopicSelect = scheduleItem.querySelector('.subtopic-select');
+    
+    // Konuları ve alt konuları temizle
+    topicSelect.innerHTML = '<option value="">Konu Seçin</option>';
+    subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
+    
+    if (courseId) {
+        // AJAX ile konuları yükle
+        fetch(`{{ route('admin.schedules.topics.by-course') }}?course_id=${courseId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.topics && data.topics.length > 0) {
+                    data.topics.forEach(topic => {
+                        const option = document.createElement('option');
+                        option.value = topic.id;
+                        option.textContent = topic.name;
+                        topicSelect.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Bu ders için konu bulunamadı';
+                    option.disabled = true;
+                    topicSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading topics:', error);
+                topicSelect.innerHTML = '<option value="">Konu yüklenirken hata oluştu</option>';
+            });
+    }
 }
 
 // Alan seçildiğinde dersleri filtrele
