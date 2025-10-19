@@ -48,6 +48,7 @@ class StudentController extends Controller
             'birth_date' => 'nullable|date',
             'student_number' => 'required|string|unique:students,student_number',
             'address' => 'nullable|string',
+            'notes' => 'nullable|string',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
@@ -93,9 +94,30 @@ class StudentController extends Controller
             'birth_date' => 'nullable|date',
             'student_number' => 'required|string|unique:students,student_number,' . $student->id,
             'address' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'password' => 'nullable|string|min:6|confirmed',
+            'is_active' => 'boolean',
         ]);
 
-        $student->update($request->all());
+        $data = $request->all();
+        
+        // Handle password update
+        if ($request->filled('password')) {
+            $data['password'] = bcrypt($request->password);
+        } else {
+            unset($data['password']);
+        }
+
+        // Handle is_active checkbox
+        $data['is_active'] = $request->has('is_active');
+
+        $student->update($data);
+
+        // Determine redirect based on where the request came from
+        if ($request->has('from_show')) {
+            return redirect()->route('admin.students.show', $student)
+                ->with('success', 'Öğrenci bilgileri başarıyla güncellendi.');
+        }
 
         return redirect()->route('admin.students.index')
             ->with('success', 'Öğrenci bilgileri başarıyla güncellendi.');

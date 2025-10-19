@@ -16,6 +16,7 @@ class Student extends Model
         'birth_date',
         'student_number',
         'address',
+        'notes',
         'is_active',
         'admin_id'
     ];
@@ -52,5 +53,21 @@ class Student extends Model
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    /**
+     * Konu takip kayıtları
+     */
+    public function topicTrackings()
+    {
+        return $this->hasMany(TopicTracking::class);
+    }
+
+    /**
+     * Soru analizleri
+     */
+    public function questionAnalyses()
+    {
+        return $this->hasMany(QuestionAnalysis::class);
     }
 }

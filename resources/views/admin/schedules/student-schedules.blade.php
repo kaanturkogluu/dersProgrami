@@ -168,7 +168,12 @@
             
             <!-- Pagination -->
             <div class="d-flex justify-content-center mt-4">
-                {{ $schedules->links('pagination::bootstrap-4') }}
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        {{ $student->full_name }} - Toplam {{ $schedules->total() }} kayıt, {{ $schedules->currentPage() }}. sayfa
+                    </div>
+                    {{ $schedules->links() }}
+                </div>
             </div>
         @else
             <div class="text-center py-5">

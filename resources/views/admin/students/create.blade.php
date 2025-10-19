@@ -138,6 +138,20 @@
                         @enderror
                     </div>
 
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notlar</label>
+                        <textarea class="form-control @error('notes') is-invalid @enderror" 
+                                  id="notes" name="notes" rows="4" 
+                                  placeholder="Öğrenci hakkında notlarınızı buraya yazabilirsiniz...">{{ old('notes') }}</textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Bu notlar sadece adminler tarafından görülebilir ve öğrenci hakkında önemli bilgileri kaydetmek için kullanılabilir.
+                        </div>
+                        @error('notes')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ route('admin.students.index') }}" class="btn btn-secondary">
                             <i class="fas fa-times me-2"></i>

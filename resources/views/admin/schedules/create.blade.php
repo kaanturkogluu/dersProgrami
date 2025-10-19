@@ -19,6 +19,56 @@
 <form action="{{ route('admin.schedules.store') }}" method="POST" id="scheduleForm">
     @csrf
     
+    <!-- Şablon Seçimi -->
+    @if($templates->count() > 0)
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-copy me-2"></i>
+                Şablon Seçimi
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Şablon Kullanımı:</strong> Mevcut şablonlardan birini seçerek, aynı ders dağılımını yeni programa kopyalayabilirsiniz.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="template_select" class="form-label">Şablon Seçin</label>
+                        <select class="form-select" id="template_select" name="template_select">
+                            <option value="">Şablon kullanmak istemiyorum</option>
+                            @foreach($templates as $template)
+                                <option value="{{ $template->id }}" data-areas="{{ json_encode($template->areas) }}" data-items-count="{{ $template->items_count }}" {{ isset($selectedTemplateId) && $selectedTemplateId == $template->id ? 'selected' : '' }}>
+                                    {{ $template->name }} ({{ $template->areas_string }}) - {{ $template->items_count }} ders
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-primary w-100" id="loadTemplateBtn" onclick="loadTemplate()" disabled>
+                            <i class="fas fa-download me-2"></i>
+                            Şablonu Yükle
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="templatePreview" class="mt-3" style="display: none;">
+                <h6>Şablon Önizleme:</h6>
+                <div class="border rounded p-3 bg-light">
+                    <div id="templateInfo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Temel Bilgiler -->
     <div class="card mb-4">
         <div class="card-header">
@@ -189,12 +239,83 @@
             <i class="fas fa-times me-2"></i>
             İptal
         </a>
-        <button type="submit" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" onclick="showSaveConfirmation()">
             <i class="fas fa-save me-2"></i>
             Programı Kaydet
         </button>
     </div>
 </form>
+
+<!-- Program Kaydetme Onay Modalı -->
+<div class="modal fade" id="saveConfirmationModal" tabindex="-1" aria-labelledby="saveConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveConfirmationModalLabel">
+                    <i class="fas fa-save me-2"></i>
+                    Program Kaydetme Onayı
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Program Kaydetme:</strong> Programınızı kaydetmek üzere. Ayrıca bu programı şablon olarak da kaydedebilirsiniz.
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Program Bilgileri:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Öğrenci:</strong> <span id="confirmStudentName">-</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Program Adı:</strong> <span id="confirmProgramName">-</span>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>Alanlar:</strong> <span id="confirmAreas">-</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Ders Sayısı:</strong> <span id="confirmItemCount">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="saveAsTemplate" onchange="toggleTemplateNameInput()">
+                    <label class="form-check-label" for="saveAsTemplate">
+                        <strong>Bu programı şablon olarak da kaydet</strong>
+                    </label>
+                </div>
+                
+                <div id="templateNameContainer" style="display: none;">
+                    <div class="mb-3">
+                        <label for="templateName" class="form-label">Şablon Adı <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="templateName" name="template_name" placeholder="Örn: TYT Haftalık Program">
+                        <div class="form-text">Bu şablon daha sonra yeni programlar oluştururken kullanılabilir.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="templateDescription" class="form-label">Şablon Açıklaması</label>
+                        <textarea class="form-control" id="templateDescription" name="template_description" rows="2" placeholder="Bu şablonun ne için kullanılacağını açıklayın..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    İptal
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveProgram()">
+                    <i class="fas fa-save me-2"></i>
+                    Programı Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Program Öğesi Template - Excel Satırı -->
 <template id="scheduleItemTemplate">
@@ -333,8 +454,252 @@
     </div>
 </div>
 
+
 <script>
 let scheduleItemIndex = 0;
+
+// Şablon seçimi değiştiğinde butonu aktif et
+document.getElementById('template_select').addEventListener('change', function() {
+    const loadBtn = document.getElementById('loadTemplateBtn');
+    const preview = document.getElementById('templatePreview');
+    
+    if (this.value) {
+        loadBtn.disabled = false;
+        
+        // Önizleme bilgilerini göster
+        const selectedOption = this.options[this.selectedIndex];
+        const areas = selectedOption.getAttribute('data-areas');
+        const itemsCount = selectedOption.getAttribute('data-items-count');
+        
+        const previewHtml = `
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Alanlar:</strong> ${areas}
+                </div>
+                <div class="col-md-6">
+                    <strong>Ders Sayısı:</strong> ${itemsCount}
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('templateInfo').innerHTML = previewHtml;
+        preview.style.display = 'block';
+    } else {
+        loadBtn.disabled = true;
+        preview.style.display = 'none';
+    }
+});
+
+// Şablon yükleme fonksiyonu
+function loadTemplate() {
+    const templateId = document.getElementById('template_select').value;
+    
+    if (!templateId) {
+        alert('Lütfen bir şablon seçin.');
+        return;
+    }
+    
+    // Loading göster
+    const loadBtn = document.getElementById('loadTemplateBtn');
+    const originalText = loadBtn.innerHTML;
+    loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Yükleniyor...';
+    loadBtn.disabled = true;
+    
+    // AJAX ile şablon verilerini al
+    fetch(`{{ route('admin.templates.template.data') }}?template_id=${templateId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Form alanlarını doldur
+                fillFormWithTemplate(data.template);
+                
+                // Başarı mesajı
+                showAlert('success', 'Şablon başarıyla yüklendi!');
+            } else {
+                throw new Error(data.message || 'Şablon yüklenirken hata oluştu');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template:', error);
+            showAlert('danger', 'Şablon yüklenirken hata oluştu: ' + error.message);
+        })
+        .finally(() => {
+            // Loading'i kaldır
+            loadBtn.innerHTML = originalText;
+            loadBtn.disabled = false;
+        });
+}
+
+// Şablon verilerini forma doldur
+function fillFormWithTemplate(template) {
+    // Program adını doldur
+    document.getElementById('name').value = template.name + ' (Kopya)';
+    
+    // Alanları seç
+    document.querySelectorAll('.area-checkbox').forEach(checkbox => {
+        checkbox.checked = template.areas.includes(checkbox.value);
+    });
+    
+    // Açıklamayı doldur
+    document.getElementById('description').value = template.description || '';
+    
+    // Mevcut satırları temizle
+    clearAllRows();
+    
+    // Şablon satırlarını ekle
+    template.schedule_items.forEach(item => {
+        addScheduleItemFromTemplate(item);
+    });
+    
+    // Alan değişikliğini tetikle (dersleri filtrelemek için)
+    document.querySelectorAll('.area-checkbox:checked').forEach(checkbox => {
+        checkbox.dispatchEvent(new Event('change'));
+    });
+}
+
+// Tüm satırları temizle
+function clearAllRows() {
+    const tbody = document.getElementById('scheduleItems');
+    const scheduleItems = tbody.querySelectorAll('.schedule-item');
+    scheduleItems.forEach(item => item.remove());
+    
+    // Boş satırı göster
+    const emptyRow = tbody.querySelector('.empty-row');
+    if (emptyRow) {
+        emptyRow.style.display = 'table-row';
+    }
+    
+    scheduleItemIndex = 0;
+}
+
+// Şablondan satır ekleme
+function addScheduleItemFromTemplate(item) {
+    const template = document.getElementById('scheduleItemTemplate');
+    const clone = template.content.cloneNode(true);
+    
+    // Index'i güncelle
+    const html = clone.querySelector('.schedule-item').outerHTML;
+    const updatedHtml = html.replace(/INDEX/g, scheduleItemIndex);
+    
+    const tbody = document.getElementById('scheduleItems');
+    
+    // Boş satırı gizle
+    const emptyRow = tbody.querySelector('.empty-row');
+    if (emptyRow) {
+        emptyRow.style.display = 'none';
+    }
+    
+    tbody.insertAdjacentHTML('beforeend', updatedHtml);
+    
+    // Yeni eklenen satırı bul ve değerleri ayarla
+    const newRow = tbody.querySelector('.schedule-item:last-child');
+    const daySelect = newRow.querySelector('.day-select');
+    const courseSelect = newRow.querySelector('.course-select');
+    const notesInput = newRow.querySelector('input[name*="notes"]');
+    
+    // Değerleri ayarla
+    daySelect.value = item.day_of_week;
+    courseSelect.value = item.course_id;
+    notesInput.value = item.notes || '';
+    
+    // Ders seçildiğinde konuları yükle
+    if (item.course_id) {
+        loadTopicsForCourseFromTemplate(courseSelect, newRow, item.topic_id, item.subtopic_id);
+    }
+    
+    scheduleItemIndex++;
+}
+
+// Şablondan konuları yükle
+function loadTopicsForCourseFromTemplate(courseSelect, scheduleItem, selectedTopicId, selectedSubtopicId) {
+    const courseId = courseSelect.value;
+    const topicSelect = scheduleItem.querySelector('.topic-select');
+    const subtopicSelect = scheduleItem.querySelector('.subtopic-select');
+    
+    // Konuları yükle
+    fetch(`{{ route('admin.schedules.topics.by-course') }}?course_id=${courseId}`)
+        .then(response => response.json())
+        .then(data => {
+            topicSelect.innerHTML = '<option value="">Konu Seçin</option>';
+            if (data.topics && data.topics.length > 0) {
+                data.topics.forEach(topic => {
+                    const option = document.createElement('option');
+                    option.value = topic.id;
+                    option.textContent = `${topic.name} (${topic.duration_minutes} dk)`;
+                    topicSelect.appendChild(option);
+                });
+                
+                // Seçili konuyu ayarla
+                if (selectedTopicId) {
+                    topicSelect.value = selectedTopicId;
+                    
+                    // Alt konuları yükle
+                    if (selectedSubtopicId) {
+                        loadSubtopicsForTopicFromTemplate(topicSelect, scheduleItem, selectedSubtopicId);
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading topics:', error);
+        });
+}
+
+// Şablondan alt konuları yükle
+function loadSubtopicsForTopicFromTemplate(topicSelect, scheduleItem, selectedSubtopicId) {
+    const topicId = topicSelect.value;
+    const subtopicSelect = scheduleItem.querySelector('.subtopic-select');
+    
+    fetch(`{{ route('admin.schedules.subtopics.by-topic') }}?topic_id=${topicId}`)
+        .then(response => response.json())
+        .then(data => {
+            subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
+            if (data.subtopics && data.subtopics.length > 0) {
+                data.subtopics.forEach(subtopic => {
+                    const option = document.createElement('option');
+                    option.value = subtopic.id;
+                    option.textContent = `${subtopic.name} (${subtopic.duration_minutes} dk)`;
+                    subtopicSelect.appendChild(option);
+                });
+                
+                // Seçili alt konuyu ayarla
+                if (selectedSubtopicId) {
+                    subtopicSelect.value = selectedSubtopicId;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subtopics:', error);
+        });
+}
+
+
+// Alert gösterme fonksiyonu
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Sayfanın üstüne ekle
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // 5 saniye sonra otomatik kapat
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
 
 function addScheduleItem() {
     const template = document.getElementById('scheduleItemTemplate');
@@ -400,17 +765,18 @@ function addScheduleItem() {
                 console.error('Error loading courses:', error);
                 newCourseSelect.innerHTML = '<option value="">Ders yüklenirken hata oluştu</option>';
             });
-    } else {
-        // Hiç alan seçilmediyse tüm dersleri göster
-        newCourseSelect.innerHTML = '<option value="">Ders Seçin</option>';
-        @foreach($courses as $course)
-            const option{{ $course->id }} = document.createElement('option');
-            option{{ $course->id }}.value = '{{ $course->id }}';
-            option{{ $course->id }}.textContent = '{{ $course->name }} ({{ $course->category->name }})';
-            option{{ $course->id }}.setAttribute('data-area', '{{ $course->category->name }}');
-            newCourseSelect.appendChild(option{{ $course->id }});
-        @endforeach
-    }
+        } else {
+            // Hiç alan seçilmediyse tüm dersleri göster
+            newCourseSelect.innerHTML = '<option value="">Ders Seçin</option>';
+            const allCourses = @json($courses);
+            allCourses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = course.name + ' (' + course.category.name + ')';
+                option.setAttribute('data-area', course.category.name);
+                newCourseSelect.appendChild(option);
+            });
+        }
     
     scheduleItemIndex++;
 }
@@ -720,13 +1086,14 @@ document.addEventListener('change', function(e) {
             // Hiç alan seçilmediyse tüm dersleri göster
             courseSelects.forEach(select => {
                 select.innerHTML = '<option value="">Ders Seçin</option>';
-                @foreach($courses as $course)
-                    const option{{ $course->id }} = document.createElement('option');
-                    option{{ $course->id }}.value = '{{ $course->id }}';
-                    option{{ $course->id }}.textContent = '{{ $course->name }} ({{ $course->category->name }})';
-                    option{{ $course->id }}.setAttribute('data-area', '{{ $course->category->name }}');
-                    select.appendChild(option{{ $course->id }});
-                @endforeach
+                const allCourses = @json($courses);
+                allCourses.forEach(course => {
+                    const option = document.createElement('option');
+                    option.value = course.id;
+                    option.textContent = course.name + ' (' + course.category.name + ')';
+                    option.setAttribute('data-area', course.category.name);
+                    select.appendChild(option);
+                });
             });
         }
         
@@ -978,4 +1345,205 @@ document.getElementById('quickAddModal').addEventListener('show.bs.modal', funct
     transition: opacity 0.2s ease;
 }
 </style>
+
+<script>
+// Sayfa yüklendiğinde otomatik şablon yükleme
+document.addEventListener('DOMContentLoaded', function() {
+    @if(isset($selectedTemplateId) && $selectedTemplateId)
+        // Şablon seçimini güncelle
+        const templateSelect = document.getElementById('template_select');
+        if (templateSelect) {
+            templateSelect.value = '{{ $selectedTemplateId }}';
+            
+            // Butonu aktif et
+            const loadBtn = document.getElementById('loadTemplateBtn');
+            if (loadBtn) {
+                loadBtn.disabled = false;
+            }
+            
+            // Önizlemeyi güncelle
+            const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+            if (selectedOption) {
+                const areas = selectedOption.getAttribute('data-areas');
+                const itemsCount = selectedOption.getAttribute('data-items-count');
+                
+                const previewHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Alanlar:</strong> ${areas}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Ders Sayısı:</strong> ${itemsCount}
+                        </div>
+                    </div>
+                `;
+                
+                const preview = document.getElementById('templatePreview');
+                if (preview) {
+                    document.getElementById('templateInfo').innerHTML = previewHtml;
+                    preview.style.display = 'block';
+                }
+            }
+            
+            // Şablonu otomatik yükle
+            setTimeout(() => {
+                loadTemplate();
+            }, 500);
+        }
+    @endif
+});
+
+// Kaydetme onay modalını göster
+function showSaveConfirmation() {
+    // Form validasyonu
+    if (!validateForm()) {
+        return;
+    }
+    
+    // Modal bilgilerini doldur
+    fillConfirmationModal();
+    
+    // Modal'ı göster
+    const modal = new bootstrap.Modal(document.getElementById('saveConfirmationModal'));
+    modal.show();
+}
+
+// Form validasyonu
+function validateForm() {
+    const studentId = document.getElementById('student_id').value;
+    const programName = document.getElementById('name').value;
+    const areas = document.querySelectorAll('.area-checkbox:checked');
+    const scheduleItems = document.querySelectorAll('.schedule-item');
+    
+    if (!studentId) {
+        showAlert('danger', 'Lütfen bir öğrenci seçin.');
+        return false;
+    }
+    
+    if (!programName.trim()) {
+        showAlert('danger', 'Lütfen program adını girin.');
+        return false;
+    }
+    
+    if (areas.length === 0) {
+        showAlert('danger', 'Lütfen en az bir alan seçin.');
+        return false;
+    }
+    
+    if (scheduleItems.length === 0) {
+        showAlert('danger', 'Lütfen en az bir ders ekleyin.');
+        return false;
+    }
+    
+    // Her satırda gün ve ders seçili mi kontrol et
+    for (let i = 0; i < scheduleItems.length; i++) {
+        const row = scheduleItems[i];
+        const daySelect = row.querySelector('.day-select');
+        const courseSelect = row.querySelector('.course-select');
+        
+        if (!daySelect.value) {
+            showAlert('danger', `${i + 1}. satırda gün seçimi yapılmamış.`);
+            return false;
+        }
+        
+        if (!courseSelect.value) {
+            showAlert('danger', `${i + 1}. satırda ders seçimi yapılmamış.`);
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Onay modalını bilgilerle doldur
+function fillConfirmationModal() {
+    const studentSelect = document.getElementById('student_id');
+    const programName = document.getElementById('name').value;
+    const areas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+    const scheduleItems = document.querySelectorAll('.schedule-item');
+    
+    // Öğrenci adını bul
+    const selectedStudentOption = studentSelect.options[studentSelect.selectedIndex];
+    const studentName = selectedStudentOption.textContent;
+    
+    // Modal bilgilerini güncelle
+    document.getElementById('confirmStudentName').textContent = studentName;
+    document.getElementById('confirmProgramName').textContent = programName;
+    document.getElementById('confirmAreas').textContent = areas.join(', ');
+    document.getElementById('confirmItemCount').textContent = scheduleItems.length;
+    
+    // Şablon adını otomatik doldur
+    document.getElementById('templateName').value = programName + ' Şablonu';
+}
+
+// Şablon adı input'unu göster/gizle
+function toggleTemplateNameInput() {
+    const saveAsTemplate = document.getElementById('saveAsTemplate');
+    const templateNameContainer = document.getElementById('templateNameContainer');
+    const templateName = document.getElementById('templateName');
+    
+    if (saveAsTemplate.checked) {
+        templateNameContainer.style.display = 'block';
+        templateName.required = true;
+    } else {
+        templateNameContainer.style.display = 'none';
+        templateName.required = false;
+    }
+}
+
+// Programı kaydet
+function saveProgram() {
+    const saveAsTemplate = document.getElementById('saveAsTemplate').checked;
+    
+    if (saveAsTemplate) {
+        const templateName = document.getElementById('templateName').value.trim();
+        const templateDescription = document.getElementById('templateDescription').value.trim();
+        
+        if (!templateName) {
+            showAlert('danger', 'Lütfen şablon adını girin.');
+            return;
+        }
+        
+        // Şablon bilgilerini forma ekle
+        addTemplateFieldsToForm(templateName, templateDescription);
+    }
+    
+    // Modal'ı kapat
+    const modal = bootstrap.Modal.getInstance(document.getElementById('saveConfirmationModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Formu gönder
+    document.getElementById('scheduleForm').submit();
+}
+
+// Şablon bilgilerini forma ekle
+function addTemplateFieldsToForm(templateName, templateDescription) {
+    const form = document.getElementById('scheduleForm');
+    
+    // Mevcut şablon alanlarını temizle
+    const existingTemplateFields = form.querySelectorAll('input[name="save_as_template"], input[name="template_name"], textarea[name="template_description"]');
+    existingTemplateFields.forEach(field => field.remove());
+    
+    // Yeni alanları ekle
+    const saveAsTemplateInput = document.createElement('input');
+    saveAsTemplateInput.type = 'hidden';
+    saveAsTemplateInput.name = 'save_as_template';
+    saveAsTemplateInput.value = '1';
+    form.appendChild(saveAsTemplateInput);
+    
+    const templateNameInput = document.createElement('input');
+    templateNameInput.type = 'hidden';
+    templateNameInput.name = 'template_name';
+    templateNameInput.value = templateName;
+    form.appendChild(templateNameInput);
+    
+    const templateDescriptionInput = document.createElement('input');
+    templateDescriptionInput.type = 'hidden';
+    templateDescriptionInput.name = 'template_description';
+    templateDescriptionInput.value = templateDescription;
+    form.appendChild(templateDescriptionInput);
+}
+</script>
 @endsection

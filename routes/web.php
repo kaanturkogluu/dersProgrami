@@ -9,6 +9,9 @@ use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\TopicController;
 use App\Http\Controllers\Admin\SubtopicController;
 use App\Http\Controllers\Admin\StudentScheduleController;
+use App\Http\Controllers\Admin\ScheduleTemplateController;
+use App\Http\Controllers\Admin\TopicTrackingController;
+use App\Http\Controllers\Admin\QuestionAnalysisController;
 
 Route::get('/', function () {
     // Eğer admin giriş yapmışsa dashboard'a, yoksa login'e yönlendir
@@ -55,6 +58,12 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('schedules/courses/by-area', [StudentScheduleController::class, 'getCoursesByArea'])->name('schedules.courses.by-area');
     Route::get('schedules/topics/by-course', [StudentScheduleController::class, 'getTopicsByCourse'])->name('schedules.topics.by-course');
     Route::get('schedules/subtopics/by-topic', [StudentScheduleController::class, 'getSubtopicsByTopic'])->name('schedules.subtopics.by-topic');
+    Route::get('schedules/template', [StudentScheduleController::class, 'getTemplateSchedule'])->name('schedules.template');
+    
+    // Schedule Templates
+    Route::resource('templates', ScheduleTemplateController::class);
+    Route::get('templates/template/data', [ScheduleTemplateController::class, 'getTemplate'])->name('templates.template.data');
+    Route::post('templates/create-from-schedule', [ScheduleTemplateController::class, 'createFromSchedule'])->name('templates.create-from-schedule');
     
     // Schedule Items
     Route::delete('schedule-items/{scheduleItem}', [StudentScheduleController::class, 'destroyScheduleItem'])->name('schedule-items.destroy');
@@ -81,6 +90,17 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('mail/send-daily-reminder-all', [\App\Http\Controllers\Admin\MailController::class, 'sendDailyReminderToAll'])->name('mail.send-daily-reminder-all');
     Route::post('mail/send-test', [\App\Http\Controllers\Admin\MailController::class, 'sendTestMail'])->name('mail.send-test');
     Route::post('mail/test-connection', [\App\Http\Controllers\Admin\MailController::class, 'testConnection'])->name('mail.test-connection');
+    
+    // Topic Tracking
+    Route::resource('topic-tracking', TopicTrackingController::class);
+    Route::post('topic-tracking/{topicTracking}/update-status', [TopicTrackingController::class, 'updateStatus'])->name('topic-tracking.update-status');
+    Route::get('topic-tracking/subtopics/by-topic', [TopicTrackingController::class, 'getSubtopics'])->name('topic-tracking.subtopics.by-topic');
+    
+    // Question Analysis
+    Route::resource('question-analysis', QuestionAnalysisController::class);
+    Route::get('question-analysis/student/{student}/stats', [QuestionAnalysisController::class, 'studentStats'])->name('question-analysis.student.stats');
+    Route::get('question-analysis/student/{student}/detailed', [QuestionAnalysisController::class, 'studentDetailed'])->name('question-analysis.student.detailed');
+    Route::get('question-analysis/subtopics/by-topic', [QuestionAnalysisController::class, 'getSubtopics'])->name('question-analysis.subtopics.by-topic');
 });
 
 // Student Routes

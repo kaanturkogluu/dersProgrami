@@ -30,4 +30,14 @@ class Topic extends Model
     {
         return $this->hasMany(Subtopic::class)->orderBy('order_index');
     }
+
+    public function topicTrackings(): HasMany
+    {
+        return $this->hasMany(TopicTracking::class);
+    }
+
+    public function questionAnalyses(): HasMany
+    {
+        return $this->hasMany(QuestionAnalysis::class);
+    }
 }

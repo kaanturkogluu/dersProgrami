@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subtopic extends Model
 {
@@ -24,5 +25,15 @@ class Subtopic extends Model
     public function topic(): BelongsTo
     {
         return $this->belongsTo(Topic::class);
+    }
+
+    public function topicTrackings(): HasMany
+    {
+        return $this->hasMany(TopicTracking::class);
+    }
+
+    public function questionAnalyses(): HasMany
+    {
+        return $this->hasMany(QuestionAnalysis::class);
     }
 }

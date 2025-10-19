@@ -48,6 +48,7 @@
                             <th>Admin</th>
                             @endif
                             <th>Durum</th>
+                            <th>Notlar</th>
                             <th>Kayıt Tarihi</th>
                             <th>İşlemler</th>
                         </tr>
@@ -125,6 +126,24 @@
                                     <span class="badge bg-success">Aktif</span>
                                 @else
                                     <span class="badge bg-secondary">Pasif</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($student->notes)
+                                    <div class="notes-preview" style="max-width: 200px;">
+                                        <small class="text-muted" title="{{ $student->notes }}">
+                                            {{ Str::limit($student->notes, 50) }}
+                                        </small>
+                                        @if(strlen($student->notes) > 50)
+                                            <br><small class="text-primary">
+                                                <i class="fas fa-sticky-note me-1"></i>Devamı var
+                                            </small>
+                                        @endif
+                                    </div>
+                                @else
+                                    <small class="text-muted">
+                                        <i class="fas fa-sticky-note me-1"></i>Not yok
+                                    </small>
                                 @endif
                             </td>
                             <td>

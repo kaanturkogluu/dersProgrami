@@ -13,7 +13,11 @@
             </h1>
             <p class="text-muted mb-0">Programı olan öğrencileri görüntüleyin ve programlarını inceleyin</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.templates.create') }}" class="btn btn-success">
+                <i class="fas fa-copy me-2"></i>
+                Yeni Şablon
+            </a>
             <a href="{{ route('admin.schedules.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>
                 Yeni Program

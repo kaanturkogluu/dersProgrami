@@ -151,7 +151,12 @@
             
             <!-- Pagination -->
             <div class="d-flex justify-content-center mt-4">
-                {{ $subtopics->links('pagination::bootstrap-4') }}
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        {{ $category->name }} - Toplam {{ $subtopics->total() }} kayıt, {{ $subtopics->currentPage() }}. sayfa
+                    </div>
+                    {{ $subtopics->links() }}
+                </div>
             </div>
         @else
             <div class="text-center py-5">

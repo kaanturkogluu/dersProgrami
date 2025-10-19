@@ -39,8 +39,12 @@ class StudentScheduleController extends Controller
         
         $courses = Course::with('category')->where('is_active', true)->get();
         $selectedStudentId = $request->get('student_id');
+        $selectedTemplateId = $request->get('template_id');
         
-        return view('admin.schedules.create', compact('students', 'courses', 'selectedStudentId'));
+        // Şablonları getir
+        $templates = \App\Models\ScheduleTemplate::active()->orderBy('name')->get();
+        
+        return view('admin.schedules.create', compact('students', 'courses', 'selectedStudentId', 'selectedTemplateId', 'templates'));
     }
 
     /**
@@ -60,6 +64,10 @@ class StudentScheduleController extends Controller
             'schedule_items.*.subtopic_id' => 'nullable|exists:subtopics,id',
             'schedule_items.*.day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'schedule_items.*.notes' => 'nullable|string',
+            // Şablon kaydetme için ek validasyonlar
+            'save_as_template' => 'nullable|boolean',
+            'template_name' => 'required_if:save_as_template,1|string|max:255',
+            'template_description' => 'nullable|string',
         ]);
 
         // Program oluştur
@@ -84,8 +92,42 @@ class StudentScheduleController extends Controller
             ]);
         }
 
+        $successMessage = 'Haftalık program başarıyla oluşturuldu.';
+
+        // Şablon olarak da kaydet
+        if ($request->has('save_as_template') && $request->save_as_template) {
+            $this->createTemplateFromSchedule($schedule, $request);
+            $successMessage .= ' Program ayrıca şablon olarak da kaydedildi.';
+        }
+
         return redirect()->route('admin.schedules.index')
-            ->with('success', 'Haftalık program başarıyla oluşturuldu.');
+            ->with('success', $successMessage);
+    }
+
+    /**
+     * Programdan şablon oluştur
+     */
+    private function createTemplateFromSchedule(StudentSchedule $schedule, Request $request)
+    {
+        // Schedule items'ları template formatına çevir
+        $scheduleItems = $schedule->scheduleItems->map(function ($item) {
+            return [
+                'day_of_week' => $item->day_of_week,
+                'course_id' => $item->course_id,
+                'topic_id' => $item->topic_id,
+                'subtopic_id' => $item->subtopic_id,
+                'notes' => $item->notes
+            ];
+        })->toArray();
+
+        // Şablon oluştur
+        \App\Models\ScheduleTemplate::create([
+            'name' => $request->template_name,
+            'description' => $request->template_description,
+            'areas' => $schedule->areas,
+            'schedule_items' => $scheduleItems,
+            'is_active' => true,
+        ]);
     }
 
     /**
@@ -303,6 +345,55 @@ class StudentScheduleController extends Controller
             'success' => true,
             'message' => 'Ders başarıyla eklendi.',
             'schedule_item' => $scheduleItem
+        ]);
+    }
+
+    /**
+     * Get template schedule data via AJAX.
+     */
+    public function getTemplateSchedule(Request $request)
+    {
+        $templateId = $request->get('template_id');
+        
+        if (!$templateId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Şablon ID gerekli'
+            ], 400);
+        }
+        
+        $template = StudentSchedule::with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
+            ->find($templateId);
+            
+        if (!$template) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Şablon bulunamadı'
+            ], 404);
+        }
+        
+        $scheduleItems = $template->scheduleItems->map(function ($item) {
+            return [
+                'day_of_week' => $item->day_of_week,
+                'course_id' => $item->course_id,
+                'course_name' => $item->course->name,
+                'course_category' => $item->course->category->name,
+                'topic_id' => $item->topic_id,
+                'topic_name' => $item->topic ? $item->topic->name : null,
+                'subtopic_id' => $item->subtopic_id,
+                'subtopic_name' => $item->subtopic ? $item->subtopic->name : null,
+                'notes' => $item->notes
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'template' => [
+                'name' => $template->name,
+                'areas' => $template->areas,
+                'description' => $template->description,
+                'schedule_items' => $scheduleItems
+            ]
         ]);
     }
 
