@@ -28,6 +28,12 @@
                 <i class="fas fa-plus me-2"></i>
                 Yeni Program Ekle
             </a>
+            @if($weeklySchedule->count() > 0)
+                <a href="{{ route('admin.programs.student.calendar.pdf', $student) }}" class="btn btn-success">
+                    <i class="fas fa-file-pdf me-2"></i>
+                    PDF İndir
+                </a>
+            @endif
         </div>
     </div>
 
@@ -84,6 +90,64 @@
         </div>
     </div>
 
+    <!-- Program Tarihleri -->
+    @if($schedules->count() > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Program Tarihleri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach($schedules as $schedule)
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-{{ $schedule->status == 'active' ? 'success' : ($schedule->status == 'upcoming' ? 'warning' : 'secondary') }}">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-calendar-alt me-2"></i>
+                                        {{ $schedule->name }}
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted">Başlangıç:</small>
+                                        <strong>{{ $schedule->start_date->format('d.m.Y') }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted">Bitiş:</small>
+                                        <strong>{{ $schedule->end_date->format('d.m.Y') }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">Durum:</small>
+                                        <span class="badge bg-{{ $schedule->status == 'active' ? 'success' : ($schedule->status == 'upcoming' ? 'warning' : 'secondary') }}">
+                                            @if($schedule->status == 'active')
+                                                <i class="fas fa-play me-1"></i>Aktif
+                                            @elseif($schedule->status == 'upcoming')
+                                                <i class="fas fa-clock me-1"></i>Yaklaşan
+                                            @else
+                                                <i class="fas fa-check me-1"></i>Tamamlandı
+                                            @endif
+                                        </span>
+                                    </div>
+                                    @if($schedule->description)
+                                        <div class="mt-2">
+                                            <small class="text-muted">{{ $schedule->description }}</small>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+    </div>
+
     <!-- Haftalık Takvim - Excel Formatı -->
     <div class="card">
         <div class="card-header">
@@ -112,7 +176,18 @@
                                     @endphp
                                     
                                     @foreach($days as $dayKey => $dayName)
-                                        <th class="day-header text-center">{{ $dayName }}</th>
+                                        <th class="day-header text-center">
+                                            <div>{{ $dayName }}</div>
+                                            @if($schedules->count() > 0)
+                                                @php
+                                                    $firstSchedule = $schedules->first();
+                                                    $startDate = $firstSchedule->start_date;
+                                                    $dayIndex = array_search($dayKey, array_keys($days));
+                                                    $dayDate = $startDate->copy()->addDays($dayIndex);
+                                                @endphp
+                                                <small class="text-muted">{{ $dayDate->format('d.m') }}</small>
+                                            @endif
+                                        </th>
                                     @endforeach
                                 </tr>
                             </thead>

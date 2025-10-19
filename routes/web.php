@@ -71,9 +71,10 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     // Student Programs Overview
     Route::get('programs/students', [StudentScheduleController::class, 'studentsWithPrograms'])->name('programs.students');
     Route::get('programs/student/{student}/calendar', [StudentScheduleController::class, 'studentCalendar'])->name('programs.student.calendar');
-            Route::get('programs/student/{student}/calendar/edit', [StudentScheduleController::class, 'studentCalendarEdit'])->name('programs.student.calendar.edit');
-            Route::put('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'updateScheduleItems'])->name('programs.student.schedule-items.update');
-            Route::post('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'createScheduleItem'])->name('programs.student.schedule-items.create');
+    Route::get('programs/student/{student}/calendar/pdf', [StudentScheduleController::class, 'studentCalendarPdf'])->name('programs.student.calendar.pdf');
+    Route::get('programs/student/{student}/calendar/edit', [StudentScheduleController::class, 'studentCalendarEdit'])->name('programs.student.calendar.edit');
+    Route::put('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'updateScheduleItems'])->name('programs.student.schedule-items.update');
+    Route::post('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'createScheduleItem'])->name('programs.student.schedule-items.create');
     Route::post('programs/student/{student}/calendar/update', [StudentScheduleController::class, 'studentCalendarUpdate'])->name('programs.student.calendar.update');
     
     // Daily Reports

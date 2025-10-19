@@ -107,6 +107,46 @@
                 </div>
             </div>
             
+            <!-- Program Tarihleri -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Program Başlangıç Tarihi <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
+                               id="start_date" name="start_date" value="{{ old('start_date', date('Y-m-d')) }}" required>
+                        @error('start_date')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">
+                            <i class="fas fa-calendar me-1"></i>
+                            Programın başlayacağı tarih (örn: Pazartesi)
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">Program Bitiş Tarihi <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control @error('end_date') is-invalid @enderror" 
+                               id="end_date" name="end_date" value="{{ old('end_date', date('Y-m-d', strtotime('+6 days'))) }}" required>
+                        @error('end_date')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">
+                            <i class="fas fa-calendar me-1"></i>
+                            Programın biteceği tarih (örn: Pazar)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarih Hesaplama Yardımcısı -->
+            <div class="alert alert-info">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Haftalık Program:</strong> Başlangıç tarihini seçtikten sonra, bitiş tarihi otomatik olarak 6 gün sonrasına ayarlanır. 
+                <span id="date-range-info" class="fw-bold"></span>
+            </div>
+            
             <div class="row">
                 <div class="col-md-12">
                     <div class="mb-3">
@@ -1545,5 +1585,44 @@ function addTemplateFieldsToForm(templateName, templateDescription) {
     templateDescriptionInput.value = templateDescription;
     form.appendChild(templateDescriptionInput);
 }
+
+// Tarih hesaplama fonksiyonu
+function updateEndDate() {
+    const startDate = document.getElementById('start_date').value;
+    if (startDate) {
+        const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6); // 6 gün ekle (haftalık program)
+        
+        document.getElementById('end_date').value = end.toISOString().split('T')[0];
+        updateDateRangeInfo();
+    }
+}
+
+// Tarih aralığı bilgisini güncelle
+function updateDateRangeInfo() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+        
+        const startDay = days[start.getDay()];
+        const endDay = days[end.getDay()];
+        
+        document.getElementById('date-range-info').textContent = 
+            `(${startDay} ${startDate} - ${endDay} ${endDate})`;
+    }
+}
+
+// Event listener'ları ekle
+document.getElementById('start_date').addEventListener('change', updateEndDate);
+document.getElementById('start_date').addEventListener('change', updateDateRangeInfo);
+document.getElementById('end_date').addEventListener('change', updateDateRangeInfo);
+
+// Sayfa yüklendiğinde tarih bilgisini güncelle
+updateDateRangeInfo();
 </script>
 @endsection

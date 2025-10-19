@@ -55,6 +55,8 @@ class StudentScheduleController extends Controller
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'name' => 'required|string|max:255',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'areas' => 'required|array|min:1',
             'areas.*' => 'required|in:TYT,EA,SAY,SOZ,DIL,KPSS',
             'description' => 'nullable|string',
@@ -75,8 +77,8 @@ class StudentScheduleController extends Controller
             'student_id' => $request->student_id,
             'name' => $request->name,
             'areas' => $request->areas,
-            'start_date' => now()->format('Y-m-d'),
-            'end_date' => now()->addMonths(3)->format('Y-m-d'),
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
             'description' => $request->description,
             'is_active' => true,
         ]);
@@ -520,7 +522,9 @@ class StudentScheduleController extends Controller
                     'topic' => $item->topic,
                     'subtopic' => $item->subtopic,
                     'notes' => $item->notes,
-                    'is_completed' => $item->is_completed
+                    'is_completed' => $item->is_completed,
+                    'start_date' => $schedule->start_date,
+                    'end_date' => $schedule->end_date
                 ]);
             }
         }
@@ -623,5 +627,51 @@ class StudentScheduleController extends Controller
 
         return redirect()->route('admin.programs.student.calendar', $student)
             ->with('success', 'Program başarıyla güncellendi.');
+    }
+
+    /**
+     * Öğrencinin programını PDF olarak indir
+     */
+    public function studentCalendarPdf(Student $student)
+    {
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin() && $student->admin_id !== $currentUser->id) {
+            return redirect()->route('admin.programs.students')
+                ->with('error', 'Bu öğrencinin programını görme yetkiniz bulunmamaktadır.');
+        }
+        
+        $schedules = $student->schedules()
+            ->where('is_active', true)
+            ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
+            ->get();
+
+        // Haftalık programı günlere göre grupla
+        $weeklySchedule = collect();
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->scheduleItems as $item) {
+                $weeklySchedule->push([
+                    'schedule_name' => $schedule->name,
+                    'area' => $schedule->areas[0] ?? 'TYT',
+                    'day' => $item->day_of_week,
+                    'day_name' => $item->day_name,
+                    'course' => $item->course,
+                    'topic' => $item->topic,
+                    'subtopic' => $item->subtopic,
+                    'notes' => $item->notes,
+                    'is_completed' => $item->is_completed,
+                    'start_date' => $schedule->start_date,
+                    'end_date' => $schedule->end_date
+                ]);
+            }
+        }
+
+        $weeklySchedule = $weeklySchedule->groupBy('day');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.schedules.student-calendar-pdf', compact('student', 'schedules', 'weeklySchedule'));
+        $pdf->setPaper('A4', 'landscape'); // Yatay A4
+        
+        return $pdf->download($student->full_name . '_program_' . date('Y-m-d') . '.pdf');
     }
 }
