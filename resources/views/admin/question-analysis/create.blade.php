@@ -17,7 +17,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-lg-8">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
@@ -30,7 +30,7 @@
                     @csrf
                     
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="student_id" class="form-label">Öğrenci <span class="text-danger">*</span></label>
                                 <select class="form-select @error('student_id') is-invalid @enderror" 
@@ -49,7 +49,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="topic_id" class="form-label">Konu <span class="text-danger">*</span></label>
                                 <select class="form-select @error('topic_id') is-invalid @enderror" 
@@ -70,11 +70,12 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="subtopic_id" class="form-label">Alt Konu</label>
                                 <select class="form-select @error('subtopic_id') is-invalid @enderror" 
-                                        id="subtopic_id" name="subtopic_id">
+                                        id="subtopic_id" name="subtopic_id"
+                                        @if(isset($selectedSubtopicId)) data-selected="{{ $selectedSubtopicId }}" @endif>
                                     <option value="">Alt Konu Seçin (Opsiyonel)</option>
                                 </select>
                                 @error('subtopic_id')
@@ -83,7 +84,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="solved_at" class="form-label">Çözüm Tarihi <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('solved_at') is-invalid @enderror" 
@@ -97,7 +98,7 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="question_source" class="form-label">Soru Kaynağı</label>
                                 <select class="form-select @error('question_source') is-invalid @enderror" 
@@ -116,7 +117,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="question_year" class="form-label">Soru Yılı</label>
                                 <select class="form-select @error('question_year') is-invalid @enderror" 
@@ -136,7 +137,7 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="difficulty" class="form-label">Zorluk <span class="text-danger">*</span></label>
                                 <select class="form-select @error('difficulty') is-invalid @enderror" 
@@ -152,7 +153,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="mb-3">
                                 <label for="solved_at" class="form-label">Çözüm Tarihi <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('solved_at') is-invalid @enderror" 
@@ -175,7 +176,7 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="mb-3">
                                         <label for="total_questions" class="form-label">Toplam Soru <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control @error('total_questions') is-invalid @enderror" 
@@ -188,7 +189,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="mb-3">
                                         <label for="correct_count" class="form-label">Doğru Sayısı <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control @error('correct_count') is-invalid @enderror" 
@@ -201,7 +202,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="mb-3">
                                         <label for="incorrect_count" class="form-label">Yanlış Sayısı <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control @error('incorrect_count') is-invalid @enderror" 
@@ -214,7 +215,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="mb-3">
                                         <label for="empty_count" class="form-label">Boş Sayısı <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control @error('empty_count') is-invalid @enderror" 
@@ -230,17 +231,17 @@
                             
                             <!-- Otomatik Hesaplama Sonuçları -->
                             <div class="row mt-3">
-                                <div class="col-md-4">
+                                <div class="col-md-4 col-12 mb-2">
                                     <div class="alert alert-info">
                                         <strong>Net:</strong> <span id="net_result">0.0</span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4 col-12 mb-2">
                                     <div class="alert alert-warning">
                                         <strong>Başarı Oranı:</strong> <span id="success_rate">0%</span>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4 col-12 mb-2">
                                     <div class="alert alert-success">
                                         <strong>Performans:</strong> <span id="performance_stars">⭐⭐⭐⭐⭐</span>
                                     </div>
@@ -265,7 +266,7 @@
         </div>
     </div>
     
-    <div class="col-md-4">
+    <div class="col-lg-4 col-12 mt-4 mt-lg-0">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
@@ -322,18 +323,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-        // Sayfa yüklendiğinde eğer topic seçiliyse alt konuları yükle
-        if (topicSelect.value) {
-            topicSelect.dispatchEvent(new Event('change'));
-            
-            // Eğer seçili alt konu varsa onu seç
-            const selectedSubtopicId = {{ $selectedSubtopicId ?? 'null' }};
-            if (selectedSubtopicId) {
-                setTimeout(() => {
-                    subtopicSelect.value = selectedSubtopicId;
-                }, 500);
-            }
-        }
+    // Sayfa yüklendiğinde eğer topic seçiliyse alt konuları yükle
+    if (topicSelect.value) {
+        topicSelect.dispatchEvent(new Event('change'));
+    }
 
         // Soru sayıları hesaplama fonksiyonu
         function calculateResults() {
@@ -391,6 +384,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Sayfa yüklendiğinde hesapla
         calculateResults();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subtopicSelect = document.getElementById('subtopic_id');
+    const selectedId = subtopicSelect.getAttribute('data-selected');
+    
+    if (selectedId) {
+        setTimeout(() => {
+            subtopicSelect.value = selectedId;
+        }, 500);
+    }
 });
 </script>
 @endsection
