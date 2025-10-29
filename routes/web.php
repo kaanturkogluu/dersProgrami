@@ -52,13 +52,14 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('categories/{category}/subtopics', [SubtopicController::class, 'categorySubtopics'])->name('subtopics.category');
     
     // Student Schedules
-    Route::resource('schedules', StudentScheduleController::class);
-    Route::get('students/{student}/schedules', [StudentScheduleController::class, 'studentSchedules'])->name('schedules.student');
-    Route::get('schedules/area/{area}', [StudentScheduleController::class, 'areaSchedules'])->name('schedules.area');
+    // Özel route'ları resource route'undan ÖNCE tanımla (çünkü Laravel route matching'de önce eşleşen route'u alır)
+    Route::get('schedules/template', [StudentScheduleController::class, 'getTemplateSchedule'])->name('schedules.template');
     Route::get('schedules/courses/by-area', [StudentScheduleController::class, 'getCoursesByArea'])->name('schedules.courses.by-area');
     Route::get('schedules/topics/by-course', [StudentScheduleController::class, 'getTopicsByCourse'])->name('schedules.topics.by-course');
     Route::get('schedules/subtopics/by-topic', [StudentScheduleController::class, 'getSubtopicsByTopic'])->name('schedules.subtopics.by-topic');
-    Route::get('schedules/template', [StudentScheduleController::class, 'getTemplateSchedule'])->name('schedules.template');
+    Route::get('schedules/area/{area}', [StudentScheduleController::class, 'areaSchedules'])->name('schedules.area');
+    Route::get('students/{student}/schedules', [StudentScheduleController::class, 'studentSchedules'])->name('schedules.student');
+    Route::resource('schedules', StudentScheduleController::class);
     
     // Schedule Templates
     Route::resource('templates', ScheduleTemplateController::class);

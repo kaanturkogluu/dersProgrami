@@ -527,10 +527,27 @@ function loadTemplate() {
     loadBtn.disabled = true;
     
     // AJAX ile şablon verilerini al
-    fetch(`{{ route('admin.schedules.template') }}?template_id=${templateId}`)
+    fetch(`{{ route('admin.schedules.template') }}?template_id=${templateId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                // Response'un metnini al
+                return response.text().then(text => {
+                    let errorMessage = 'Network response was not ok';
+                    try {
+                        const json = JSON.parse(text);
+                        errorMessage = json.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                });
             }
             return response.json();
         })
@@ -547,7 +564,8 @@ function loadTemplate() {
         })
         .catch(error => {
             console.error('Error loading template:', error);
-            showAlert('danger', 'Şablon yüklenirken hata oluştu: ' + error.message);
+            const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
+            showAlert('danger', 'Şablon yüklenirken hata oluştu: ' + errorMessage);
         })
         .finally(() => {
             // Loading'i kaldır

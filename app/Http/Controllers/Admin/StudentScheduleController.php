@@ -11,6 +11,7 @@ use App\Models\Topic;
 use App\Models\Subtopic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class StudentScheduleController extends Controller
 {
@@ -361,52 +362,71 @@ class StudentScheduleController extends Controller
      */
     public function getTemplateSchedule(Request $request)
     {
-        $templateId = $request->get('template_id');
-        
-        if (!$templateId) {
+        try {
+            $templateId = $request->get('template_id');
+            
+            if (!$templateId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Şablon ID gerekli'
+                ], 400);
+            }
+            
+            $template = \App\Models\ScheduleTemplate::find($templateId);
+                
+            if (!$template) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Şablon bulunamadı'
+                ], 404);
+            }
+            
+            // Schedule items'ları formatla - null kontrolü ekle
+            $scheduleItems = [];
+            if ($template->schedule_items && is_array($template->schedule_items)) {
+                $scheduleItems = collect($template->schedule_items)->map(function ($item) {
+                    if (!isset($item['course_id'])) {
+                        return null;
+                    }
+                    
+                    $course = Course::with('category')->find($item['course_id']);
+                    $topic = isset($item['topic_id']) && $item['topic_id'] ? Topic::find($item['topic_id']) : null;
+                    $subtopic = isset($item['subtopic_id']) && $item['subtopic_id'] ? Subtopic::find($item['subtopic_id']) : null;
+                    
+                    return [
+                        'day_of_week' => $item['day_of_week'] ?? null,
+                        'course_id' => $item['course_id'],
+                        'course_name' => $course ? $course->name : '',
+                        'course_category' => $course && $course->category ? $course->category->name : '',
+                        'topic_id' => $item['topic_id'] ?? null,
+                        'topic_name' => $topic ? $topic->name : null,
+                        'subtopic_id' => $item['subtopic_id'] ?? null,
+                        'subtopic_name' => $subtopic ? $subtopic->name : null,
+                        'notes' => $item['notes'] ?? null
+                    ];
+                })->filter()->values()->all();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'template' => [
+                    'name' => $template->name ?? '',
+                    'areas' => $template->areas ?? [],
+                    'description' => $template->description ?? '',
+                    'schedule_items' => $scheduleItems
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Template load error: ' . $e->getMessage(), [
+                'template_id' => $request->get('template_id'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Şablon ID gerekli'
-            ], 400);
+                'message' => 'Şablon yüklenirken bir hata oluştu: ' . $e->getMessage()
+            ], 500);
         }
-        
-        $template = \App\Models\ScheduleTemplate::find($templateId);
-            
-        if (!$template) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Şablon bulunamadı'
-            ], 404);
-        }
-        
-        // Schedule items'ları formatla
-        $scheduleItems = collect($template->schedule_items)->map(function ($item) {
-            $course = Course::with('category')->find($item['course_id']);
-            $topic = isset($item['topic_id']) && $item['topic_id'] ? Topic::find($item['topic_id']) : null;
-            $subtopic = isset($item['subtopic_id']) && $item['subtopic_id'] ? Subtopic::find($item['subtopic_id']) : null;
-            
-            return [
-                'day_of_week' => $item['day_of_week'],
-                'course_id' => $item['course_id'],
-                'course_name' => $course ? $course->name : '',
-                'course_category' => $course && $course->category ? $course->category->name : '',
-                'topic_id' => $item['topic_id'] ?? null,
-                'topic_name' => $topic ? $topic->name : null,
-                'subtopic_id' => $item['subtopic_id'] ?? null,
-                'subtopic_name' => $subtopic ? $subtopic->name : null,
-                'notes' => $item['notes'] ?? null
-            ];
-        });
-        
-        return response()->json([
-            'success' => true,
-            'template' => [
-                'name' => $template->name,
-                'areas' => $template->areas,
-                'description' => $template->description,
-                'schedule_items' => $scheduleItems
-            ]
-        ]);
     }
 
     /**
