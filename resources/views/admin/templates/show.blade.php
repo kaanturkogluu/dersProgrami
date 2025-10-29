@@ -93,7 +93,7 @@
                     <hr>
                     
                     <div class="text-center">
-                        <div class="h4 mb-0 text-info">{{ $template->schedule_items->groupBy('day_of_week')->count() }}</div>
+                        <div class="h4 mb-0 text-info">{{ count(collect($template->schedule_items ?? [])->groupBy('day_of_week')) }}</div>
                         <small class="text-muted">Gün Sayısı</small>
                     </div>
                 </div>
@@ -107,7 +107,7 @@
             <h5 class="card-title mb-0">Program Öğeleri</h5>
         </div>
         <div class="card-body">
-            @if($template->schedule_items->count() > 0)
+            @if(count($template->schedule_items ?? []) > 0)
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead class="table-light">
@@ -121,7 +121,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($template->schedule_items as $index => $item)
+                            @foreach($template->schedule_items ?? [] as $index => $item)
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>

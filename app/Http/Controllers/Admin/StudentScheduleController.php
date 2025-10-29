@@ -44,7 +44,10 @@ class StudentScheduleController extends Controller
         // Şablonları getir
         $templates = \App\Models\ScheduleTemplate::active()->orderBy('name')->get();
         
-        return view('admin.schedules.create', compact('students', 'courses', 'selectedStudentId', 'selectedTemplateId', 'templates'));
+        // Aktif kategorileri getir (sadece mevcut kategoriler)
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
+        
+        return view('admin.schedules.create', compact('students', 'courses', 'selectedStudentId', 'selectedTemplateId', 'templates', 'categories'));
     }
 
     /**
@@ -52,13 +55,16 @@ class StudentScheduleController extends Controller
      */
     public function store(Request $request)
     {
+        // Aktif kategorilerin isimlerini al
+        $activeCategoryNames = \App\Models\Category::where('is_active', true)->pluck('name')->toArray();
+        
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'areas' => 'required|array|min:1',
-            'areas.*' => 'required|in:TYT,EA,SAY,SOZ,DIL,KPSS',
+            'areas.*' => 'required|in:' . implode(',', $activeCategoryNames),
             'description' => 'nullable|string',
             'schedule_items' => 'required|array|min:1',
             'schedule_items.*.course_id' => 'required|exists:courses,id',
@@ -364,8 +370,7 @@ class StudentScheduleController extends Controller
             ], 400);
         }
         
-        $template = StudentSchedule::with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
-            ->find($templateId);
+        $template = \App\Models\ScheduleTemplate::find($templateId);
             
         if (!$template) {
             return response()->json([
@@ -374,17 +379,22 @@ class StudentScheduleController extends Controller
             ], 404);
         }
         
-        $scheduleItems = $template->scheduleItems->map(function ($item) {
+        // Schedule items'ları formatla
+        $scheduleItems = collect($template->schedule_items)->map(function ($item) {
+            $course = Course::with('category')->find($item['course_id']);
+            $topic = isset($item['topic_id']) && $item['topic_id'] ? Topic::find($item['topic_id']) : null;
+            $subtopic = isset($item['subtopic_id']) && $item['subtopic_id'] ? Subtopic::find($item['subtopic_id']) : null;
+            
             return [
-                'day_of_week' => $item->day_of_week,
-                'course_id' => $item->course_id,
-                'course_name' => $item->course->name,
-                'course_category' => $item->course->category->name,
-                'topic_id' => $item->topic_id,
-                'topic_name' => $item->topic ? $item->topic->name : null,
-                'subtopic_id' => $item->subtopic_id,
-                'subtopic_name' => $item->subtopic ? $item->subtopic->name : null,
-                'notes' => $item->notes
+                'day_of_week' => $item['day_of_week'],
+                'course_id' => $item['course_id'],
+                'course_name' => $course ? $course->name : '',
+                'course_category' => $course && $course->category ? $course->category->name : '',
+                'topic_id' => $item['topic_id'] ?? null,
+                'topic_name' => $topic ? $topic->name : null,
+                'subtopic_id' => $item['subtopic_id'] ?? null,
+                'subtopic_name' => $subtopic ? $subtopic->name : null,
+                'notes' => $item['notes'] ?? null
             ];
         });
         
@@ -671,6 +681,9 @@ class StudentScheduleController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.schedules.student-calendar-pdf', compact('student', 'schedules', 'weeklySchedule'));
         $pdf->setPaper('A4', 'landscape'); // Yatay A4
+        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('defaultFont', 'DejaVu Sans');
         
         return $pdf->download($student->full_name . '_program_' . date('Y-m-d') . '.pdf');
     }

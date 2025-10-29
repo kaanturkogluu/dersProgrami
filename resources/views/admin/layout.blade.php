@@ -23,9 +23,12 @@
             --dark-color: #1E293B;
         }
 
-        body {
+        html, body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--light-color);
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         /* Prevent background scroll when mobile menu is open */
@@ -35,13 +38,40 @@
 
         .sidebar {
             background: linear-gradient(135deg, var(--primary-color) 0%, #1E40AF 100%);
-            min-height: 100vh;
             height: 100vh;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             z-index: 1030;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Desktop'ta sidebar genişlikleri */
+        @media (min-width: 768px) and (max-width: 991px) {
+            .sidebar {
+                width: 25%; /* col-md-3 */
+            }
+        }
+
+        @media (min-width: 992px) {
+            .sidebar {
+                width: 16.666667%; /* col-lg-2 */
+            }
+        }
+
+
+        /* Sidebar scroll bar gizle ama scroll özelliği kalsın */
+        .sidebar .overflow-auto {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE ve Edge */
+        }
+
+        .sidebar .overflow-auto::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
 
         .sidebar .nav-link {
@@ -367,6 +397,29 @@
             .overlay {
                 display: none !important;
             }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                overflow-y: auto;
+            }
+
+            /* Main content margin - sidebar genişliğine göre */
+            @media (min-width: 768px) and (max-width: 991px) {
+                .main-content {
+                    margin-left: 25%; /* col-md-3 = 3/12 = 25% */
+                    padding-left: 1.5rem !important;
+                }
+            }
+
+            @media (min-width: 992px) {
+                .main-content {
+                    margin-left: 16.666667%; /* col-lg-2 = 2/12 = 16.666667% */
+                    padding-left: 1.5rem !important;
+                }
+            }
         }
 
         /* Pagination Styles */
@@ -479,8 +532,8 @@
     <!-- Mobile Overlay -->
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid px-0">
+        <div class="row g-0">
             
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebar">

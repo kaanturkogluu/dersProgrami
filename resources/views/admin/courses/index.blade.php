@@ -33,7 +33,7 @@
         </div>
     </div>
     <div class="card-body">
-        @if($courses->count() > 0)
+        @if(count($courses) > 0)
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
@@ -95,7 +95,7 @@
                                 <small class="text-muted">{{ $course->created_at->format('d.m.Y H:i') }}</small>
                             </td>
                             <td>
-                                <div class="btn-group" role="group">
+                                <div class="d-flex flex-wrap gap-1">
                                     <a href="{{ route('admin.courses.show', $course) }}" 
                                        class="btn btn-sm btn-outline-info" title="Görüntüle">
                                         <i class="fas fa-eye"></i>
@@ -125,12 +125,6 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
-            @if($courses->hasPages())
-                <div class="d-flex justify-content-center mt-4">
-                    {{ $courses->links() }}
-                </div>
-            @endif
         @else
             <div class="text-center py-5">
                 <i class="fas fa-book fa-4x text-muted mb-4"></i>
@@ -145,6 +139,7 @@
     </div>
 </div>
 @endsection
+
 
 @push('scripts')
 <script>
@@ -164,6 +159,7 @@
                 }
             });
         });
+
     });
 </script>
 @endpush

@@ -5,6 +5,7 @@ namespace App\Services;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+use Illuminate\Support\Facades\Log;
 
 class PHPMailerService
 {
@@ -55,7 +56,10 @@ class PHPMailerService
 
         // Email formatı kontrolü
         if (!filter_var($this->config['from_email'], FILTER_VALIDATE_EMAIL)) {
-            throw new \Exception('Geçersiz gönderen email adresi: ' . $this->config['from_email']);
+            $errorMsg = config('app.debug') 
+                ? 'Geçersiz gönderen email adresi: ' . $this->config['from_email'] 
+                : 'Geçersiz gönderen email adresi.';
+            throw new \Exception($errorMsg);
         }
     }
 
@@ -90,8 +94,10 @@ class PHPMailerService
             $this->mailer->Encoding = 'base64';
 
         } catch (Exception $e) {
-            \Log::error('PHPMailer initialization failed: ' . $e->getMessage());
-            throw new \Exception('Mail servisi başlatılamadı: ' . $e->getMessage());
+            if (config('app.debug')) {
+                Log::error('PHPMailer initialization failed: ' . $e->getMessage());
+            }
+            throw new \Exception('Mail servisi başlatılamadı.');
         }
     }
 
@@ -116,11 +122,17 @@ class PHPMailerService
             // Send
             $result = $this->mailer->send();
             
-            \Log::info("Mail gönderildi: {$to} - {$subject}");
+            if (config('app.debug')) {
+                Log::info("Mail gönderildi: {$to} - {$subject}");
+            }
             return ['success' => true, 'message' => 'Mail başarıyla gönderildi'];
 
         } catch (Exception $e) {
-            \Log::error("Mail gönderilemedi: {$to} - {$e->getMessage()}");
+            if (config('app.debug')) {
+                Log::error("Mail gönderilemedi: " . substr($to, 0, 3) . "*** - {$e->getMessage()}");
+            } else {
+                Log::error("Mail gönderilemedi: {$e->getMessage()}");
+            }
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -198,6 +210,17 @@ class PHPMailerService
      */
     private function getTestMailBody()
     {
+        // Production'da hassas bilgileri gösterme
+        $showDetails = config('app.debug', false);
+        
+        $detailsHtml = '';
+        if ($showDetails) {
+            $detailsHtml = '
+                    <p><strong>SMTP Host:</strong> ' . $this->config['host'] . '</p>
+                    <p><strong>Port:</strong> ' . $this->config['port'] . '</p>
+                    <p><strong>Şifreleme:</strong> ' . $this->config['encryption'] . '</p>';
+        }
+        
         return '
         <!DOCTYPE html>
         <html lang="tr">
@@ -223,9 +246,7 @@ class PHPMailerService
                     <p>Bu bir test mailidir. PHPMailer servisi başarıyla çalışıyor!</p>
                     <p class="success">Mail konfigürasyonunuz doğru şekilde ayarlanmış.</p>
                     <p><strong>Gönderim Zamanı:</strong> ' . now()->format('d.m.Y H:i:s') . '</p>
-                    <p><strong>SMTP Host:</strong> ' . $this->config['host'] . '</p>
-                    <p><strong>Port:</strong> ' . $this->config['port'] . '</p>
-                    <p><strong>Şifreleme:</strong> ' . $this->config['encryption'] . '</p>
+                    ' . $detailsHtml . '
                 </div>
             </div>
         </body>

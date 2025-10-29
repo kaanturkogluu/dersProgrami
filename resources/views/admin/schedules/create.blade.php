@@ -156,46 +156,27 @@
                             <strong>Alan Seçimi:</strong> Birden fazla alan seçebilirsiniz. Seçilen alanlara göre dersler filtrelenecektir.
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
+                            @foreach($categories as $category)
+                            <div class="col-md-4 col-lg-3 mb-2">
                                 <div class="form-check">
-                                    <input class="form-check-input area-checkbox" type="checkbox" value="TYT" id="area_tyt" name="areas[]">
-                                    <label class="form-check-label" for="area_tyt">
-                                        <strong>TYT</strong> - Temel Yeterlilik Testi
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input area-checkbox" type="checkbox" value="EA" id="area_ea" name="areas[]">
-                                    <label class="form-check-label" for="area_ea">
-                                        <strong>EA</strong> - Eşit Ağırlık (TYT + AYT EA)
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input area-checkbox" type="checkbox" value="SAY" id="area_say" name="areas[]">
-                                    <label class="form-check-label" for="area_say">
-                                        <strong>SAY</strong> - Sayısal (TYT + AYT Sayısal)
+                                    <input class="form-check-input area-checkbox" type="checkbox" value="{{ $category->name }}" id="area_{{ $category->id }}" name="areas[]">
+                                    <label class="form-check-label" for="area_{{ $category->id }}">
+                                        <strong>{{ $category->name }}</strong>
+                                        @if($category->description)
+                                            <br><small class="text-muted">{{ $category->description }}</small>
+                                        @endif
                                     </label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input area-checkbox" type="checkbox" value="SOZ" id="area_soz" name="areas[]">
-                                    <label class="form-check-label" for="area_soz">
-                                        <strong>SÖZ</strong> - Sözel (TYT + AYT Sözel)
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input area-checkbox" type="checkbox" value="DIL" id="area_dil" name="areas[]">
-                                    <label class="form-check-label" for="area_dil">
-                                        <strong>DİL</strong> - Dil (TYT + YDT)
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input area-checkbox" type="checkbox" value="KPSS" id="area_kpss" name="areas[]">
-                                    <label class="form-check-label" for="area_kpss">
-                                        <strong>KPSS</strong> - Kamu Personeli Seçme Sınavı
-                                    </label>
+                            @endforeach
+                            @if($categories->count() == 0)
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Henüz kategori oluşturulmamış. Lütfen önce kategori oluşturun.
                                 </div>
                             </div>
+                            @endif
                         </div>
                         @error('areas')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -380,7 +361,7 @@
                 <option value="">Ders Seçin</option>
                 @foreach($courses as $course)
                     <option value="{{ $course->id }}" data-area="{{ $course->category->name }}">
-                        {{ $course->name }} ({{ $course->category->name }})
+                        {{ $course->category->name }} - {{ $course->name }}
                     </option>
                 @endforeach
             </select>
@@ -436,7 +417,7 @@
                                        data-course-category="{{ $course->category->name }}"
                                        id="course_{{ $course->id }}">
                                 <label class="form-check-label" for="course_{{ $course->id }}">
-                                    {{ $course->name }} <small class="text-muted">({{ $course->category->name }})</small>
+                                    <strong>{{ $course->category->name }}</strong> - {{ $course->name }}
                                 </label>
                             </div>
                             @endforeach
@@ -546,7 +527,7 @@ function loadTemplate() {
     loadBtn.disabled = true;
     
     // AJAX ile şablon verilerini al
-    fetch(`{{ route('admin.templates.template.data') }}?template_id=${templateId}`)
+    fetch(`{{ route('admin.schedules.template') }}?template_id=${templateId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -789,7 +770,7 @@ function addScheduleItem() {
                     data.courses.forEach(course => {
                         const option = document.createElement('option');
                         option.value = course.id;
-                        option.textContent = `${course.name} (${course.category})`;
+                        option.textContent = `${course.category} - ${course.name}`;
                         option.setAttribute('data-area', course.category);
                         newCourseSelect.appendChild(option);
                     });
@@ -812,7 +793,7 @@ function addScheduleItem() {
             allCourses.forEach(course => {
                 const option = document.createElement('option');
                 option.value = course.id;
-                option.textContent = course.name + ' (' + course.category.name + ')';
+                option.textContent = course.category.name + ' - ' + course.name;
                 option.setAttribute('data-area', course.category.name);
                 newCourseSelect.appendChild(option);
             });
@@ -915,7 +896,7 @@ function updatePreview() {
         
         previewHtml += `<div class="col-md-6 mb-2">
             <div class="card card-body p-2">
-                <strong>${courseName}</strong> <small class="text-muted">(${courseCategory})</small>
+                <strong>${courseCategory}</strong> - ${courseName}
                 <div class="mt-1">
                     ${selectedDays.map(day => {
                         const dayNames = {
@@ -1102,7 +1083,7 @@ document.addEventListener('change', function(e) {
                             data.courses.forEach(course => {
                                 const option = document.createElement('option');
                                 option.value = course.id;
-                                option.textContent = `${course.name} (${course.category})`;
+                                option.textContent = `${course.category} - ${course.name}`;
                                 option.setAttribute('data-area', course.category);
                                 select.appendChild(option);
                             });
@@ -1130,7 +1111,7 @@ document.addEventListener('change', function(e) {
                 allCourses.forEach(course => {
                     const option = document.createElement('option');
                     option.value = course.id;
-                    option.textContent = course.name + ' (' + course.category.name + ')';
+                    option.textContent = course.category.name + ' - ' + course.name;
                     option.setAttribute('data-area', course.category.name);
                     select.appendChild(option);
                 });

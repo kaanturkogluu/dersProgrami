@@ -144,7 +144,7 @@
                                                                         <option value="{{ $course->id }}" 
                                                                                 {{ $program['course']->id == $course->id ? 'selected' : '' }}
                                                                                 data-category="{{ $course->category->name }}">
-                                                                            {{ $course->name }} ({{ $course->category->name }})
+                                                                                {{ $course->category->name }} - {{ $course->name }}
                                                                         </option>
                                                                     @endforeach
                                                                 </select>
@@ -225,7 +225,7 @@
                                                                         @foreach($courses as $course)
                                                                             <option value="{{ $course->id }}" 
                                                                                     data-category="{{ $course->category->name }}">
-                                                                                {{ $course->name }} ({{ $course->category->name }})
+                                                                                {{ $course->category->name }} - {{ $course->name }}
                                                                             </option>
                                                                         @endforeach
                                                                     </select>
@@ -719,29 +719,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Yeni ders formu gösterme
     window.showNewLessonForm = function(dayKey, row) {
-        console.log('showNewLessonForm called with:', dayKey, row);
-        
         const formId = `form-${dayKey}-${row}`;
-        console.log('Looking for form with ID:', formId);
-        
         const form = document.getElementById(formId);
-        console.log('Form found:', form);
         
         if (form) {
             // Buton'u bul - form'un parent'ında arama yap
             const parent = form.parentElement;
             const button = parent.querySelector('.add-lesson-btn');
-            console.log('Button found:', button);
             
             if (button) {
                 form.style.display = 'block';
                 button.style.display = 'none';
-                console.log('Form shown, button hidden');
-            } else {
-                console.error('Button not found');
             }
-        } else {
-            console.error('Form not found with ID:', formId);
         }
     };
     

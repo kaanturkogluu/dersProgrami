@@ -53,42 +53,27 @@
             <div class="mb-3">
                 <label class="form-label">Alanlar <span class="text-danger">*</span></label>
                 <div class="row">
-                    <div class="col-md-2">
+                    @foreach($categories as $category)
+                    <div class="col-md-4 col-lg-3 mb-2">
                         <div class="form-check">
-                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="TYT" id="area_tyt" {{ in_array('TYT', old('areas', [])) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="area_tyt">TYT</label>
+                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="{{ $category->name }}" id="area_{{ $category->id }}" {{ in_array($category->name, old('areas', [])) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="area_{{ $category->id }}">
+                                <strong>{{ $category->name }}</strong>
+                                @if($category->description)
+                                    <br><small class="text-muted">{{ $category->description }}</small>
+                                @endif
+                            </label>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="form-check">
-                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="EA" id="area_ea" {{ in_array('EA', old('areas', [])) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="area_ea">EA</label>
+                    @endforeach
+                    @if($categories->count() == 0)
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Henüz kategori oluşturulmamış. Lütfen önce kategori oluşturun.
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="form-check">
-                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="SAY" id="area_say" {{ in_array('SAY', old('areas', [])) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="area_say">SAY</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-check">
-                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="SOZ" id="area_soz" {{ in_array('SOZ', old('areas', [])) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="area_soz">SOZ</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-check">
-                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="DIL" id="area_dil" {{ in_array('DIL', old('areas', [])) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="area_dil">DIL</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-check">
-                            <input class="form-check-input area-checkbox" type="checkbox" name="areas[]" value="KPSS" id="area_kpss" {{ in_array('KPSS', old('areas', [])) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="area_kpss">KPSS</label>
-                        </div>
-                    </div>
+                    @endif
                 </div>
                 @error('areas')
                     <div class="text-danger">{{ $message }}</div>
@@ -173,7 +158,7 @@
                 <option value="">Ders Seçin</option>
                 @foreach($courses as $course)
                     <option value="{{ $course->id }}" data-areas="{{ json_encode($course->areas) }}">
-                        {{ $course->name }}
+                        {{ $course->category->name }} - {{ $course->name }}
                     </option>
                 @endforeach
             </select>
@@ -224,7 +209,7 @@
                                        data-course-category="{{ $course->category->name }}"
                                        id="course_{{ $course->id }}">
                                 <label class="form-check-label" for="course_{{ $course->id }}">
-                                    {{ $course->name }} <small class="text-muted">({{ $course->category->name }})</small>
+                                    <strong>{{ $course->category->name }}</strong> - {{ $course->name }}
                                 </label>
                             </div>
                             @endforeach

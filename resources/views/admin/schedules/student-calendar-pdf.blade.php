@@ -6,12 +6,16 @@
     <title>{{ $student->full_name }} - Program Takvimi</title>
     <style>
         @charset "UTF-8";
+        * {
+            font-family: 'DejaVu Sans', sans-serif;
+        }
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'DejaVu Sans', sans-serif;
             font-size: 12px;
             margin: 0;
             padding: 2px;
             background: white;
+            direction: ltr;
         }
         
         .header {

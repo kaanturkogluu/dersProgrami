@@ -278,7 +278,6 @@ document.getElementById('notes').addEventListener('input', function() {
     clearTimeout(autoSaveTimeout);
     autoSaveTimeout = setTimeout(function() {
         // You can implement auto-save here if needed
-        console.log('Auto-save triggered');
     }, 2000);
 });
 </script>

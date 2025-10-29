@@ -9,6 +9,7 @@ use App\Mail\DailyReminderMail;
 use App\Services\PHPMailerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class MailController extends Controller
@@ -175,15 +176,18 @@ class MailController extends Controller
             $result = $mailService->sendTestMail($request->test_email, 'Test Kullanıcı');
             
             if ($result['success']) {
+                // Production'da email adresini gösterme
+                $emailDisplay = config('app.debug') ? $request->test_email : 'belirtilen adrese';
                 return redirect()->route('admin.mail.index')
-                    ->with('success', 'Test maili ' . $request->test_email . ' adresine başarıyla gönderildi.');
+                    ->with('success', 'Test maili ' . $emailDisplay . ' başarıyla gönderildi.');
             } else {
                 return redirect()->route('admin.mail.index')
                     ->with('error', 'Test maili gönderilirken bir hata oluştu: ' . $result['message']);
             }
         } catch (\Exception $e) {
+            $errorMessage = config('app.debug') ? $e->getMessage() : 'Test maili gönderilirken bir hata oluştu.';
             return redirect()->route('admin.mail.index')
-                ->with('error', 'Test maili gönderilirken bir hata oluştu: ' . $e->getMessage());
+                ->with('error', $errorMessage);
         }
     }
 
@@ -204,8 +208,9 @@ class MailController extends Controller
                     ->with('error', 'SMTP bağlantısı başarısız: ' . $result['message']);
             }
         } catch (\Exception $e) {
+            $errorMessage = config('app.debug') ? 'SMTP bağlantısı test edilemedi: ' . $e->getMessage() : 'SMTP bağlantısı test edilemedi.';
             return redirect()->route('admin.mail.index')
-                ->with('error', 'SMTP bağlantısı test edilemedi: ' . $e->getMessage());
+                ->with('error', $errorMessage);
         }
     }
 
@@ -219,14 +224,20 @@ class MailController extends Controller
             $result = $welcomeMail->send();
             
             if ($result['success']) {
-                \Log::info('Welcome mail gönderildi: ' . $student->email);
+                if (config('app.debug')) {
+                    Log::info('Welcome mail gönderildi: ' . $student->email);
+                }
                 return true;
             } else {
-                \Log::error('Welcome mail gönderilemedi: ' . $result['message']);
+                if (config('app.debug')) {
+                    Log::error('Welcome mail gönderilemedi: ' . $result['message']);
+                }
                 return false;
             }
         } catch (\Exception $e) {
-            \Log::error('Welcome mail gönderilemedi: ' . $e->getMessage());
+            if (config('app.debug')) {
+                Log::error('Welcome mail gönderilemedi: ' . $e->getMessage());
+            }
             return false;
         }
     }

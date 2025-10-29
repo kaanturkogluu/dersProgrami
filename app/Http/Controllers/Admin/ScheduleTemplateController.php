@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ScheduleTemplate;
 use App\Models\Course;
+use App\Models\Category;
 use App\Models\Topic;
 use App\Models\Subtopic;
 use Illuminate\Http\Request;
@@ -30,7 +31,10 @@ class ScheduleTemplateController extends Controller
     {
         $courses = Course::with('category')->where('is_active', true)->get();
         
-        return view('admin.templates.create', compact('courses'));
+        // Aktif kategorileri getir (sadece mevcut kategoriler)
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        
+        return view('admin.templates.create', compact('courses', 'categories'));
     }
 
     /**
@@ -38,10 +42,13 @@ class ScheduleTemplateController extends Controller
      */
     public function store(Request $request)
     {
+        // Aktif kategorilerin isimlerini al
+        $activeCategoryNames = Category::where('is_active', true)->pluck('name')->toArray();
+        
         $request->validate([
             'name' => 'required|string|max:255',
             'areas' => 'required|array|min:1',
-            'areas.*' => 'required|in:TYT,EA,SAY,SOZ,DIL,KPSS',
+            'areas.*' => 'required|in:' . implode(',', $activeCategoryNames),
             'description' => 'nullable|string',
             'schedule_items' => 'required|array|min:1',
             'schedule_items.*.course_id' => 'required|exists:courses,id',
@@ -68,8 +75,7 @@ class ScheduleTemplateController extends Controller
      */
     public function show(ScheduleTemplate $template)
     {
-        $template->load(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic']);
-        
+        // schedule_items JSON array olarak saklanıyor, ilişki değil
         return view('admin.templates.show', compact('template'));
     }
 
@@ -80,7 +86,10 @@ class ScheduleTemplateController extends Controller
     {
         $courses = Course::with('category')->where('is_active', true)->get();
         
-        return view('admin.templates.edit', compact('template', 'courses'));
+        // Aktif kategorileri getir (sadece mevcut kategoriler)
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        
+        return view('admin.templates.edit', compact('template', 'courses', 'categories'));
     }
 
     /**
@@ -88,10 +97,13 @@ class ScheduleTemplateController extends Controller
      */
     public function update(Request $request, ScheduleTemplate $template)
     {
+        // Aktif kategorilerin isimlerini al
+        $activeCategoryNames = Category::where('is_active', true)->pluck('name')->toArray();
+        
         $request->validate([
             'name' => 'required|string|max:255',
             'areas' => 'required|array|min:1',
-            'areas.*' => 'required|in:TYT,EA,SAY,SOZ,DIL,KPSS',
+            'areas.*' => 'required|in:' . implode(',', $activeCategoryNames),
             'description' => 'nullable|string',
             'schedule_items' => 'required|array|min:1',
             'schedule_items.*.course_id' => 'required|exists:courses,id',
