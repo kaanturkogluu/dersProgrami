@@ -630,7 +630,13 @@
                             </div>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.topic-tracking.*') ? 'active' : '' }}" href="{{ route('admin.topic-tracking.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.topic-tracking.student-progress') ? 'active' : '' }}" href="{{ route('admin.topic-tracking.student-progress') }}">
+                                <i class="fas fa-clipboard-check"></i>
+                                Öğrenci Ders Takibi
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.topic-tracking.index') || request()->routeIs('admin.topic-tracking.create') || request()->routeIs('admin.topic-tracking.edit') || request()->routeIs('admin.topic-tracking.show') ? 'active' : '' }}" href="{{ route('admin.topic-tracking.index') }}">
                                 <i class="fas fa-tasks"></i>
                                 Konu Takip
                             </a>

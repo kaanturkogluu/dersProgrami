@@ -129,6 +129,9 @@
                         <li><a class="dropdown-item" href="{{ route('student.daily-tracking') }}">
                             <i class="fas fa-calendar-day me-2"></i>Günlük Takip
                         </a></li>
+                        <li><a class="dropdown-item" href="{{ route('student.question-tracking') }}">
+                            <i class="fas fa-clipboard-list me-2"></i>Soru Takibi
+                        </a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('student.logout') }}" class="d-inline">

@@ -75,7 +75,64 @@ class ScheduleTemplateController extends Controller
      */
     public function show(ScheduleTemplate $template)
     {
-        // schedule_items JSON array olarak saklanıyor, ilişki değil
+        // schedule_items içindeki ID'leri kullanarak ilgili verileri yükle
+        $scheduleItems = collect($template->schedule_items)->map(function($item) {
+            // Gün adını Türkçe'ye çevir
+            $dayNames = [
+                'monday' => 'Pazartesi',
+                'tuesday' => 'Salı',
+                'wednesday' => 'Çarşamba',
+                'thursday' => 'Perşembe',
+                'friday' => 'Cuma',
+                'saturday' => 'Cumartesi',
+                'sunday' => 'Pazar'
+            ];
+            $item['day_name'] = $dayNames[$item['day_of_week']] ?? ucfirst($item['day_of_week']);
+            
+            // Ders bilgisini yükle
+            if (isset($item['course_id']) && $item['course_id']) {
+                $course = Course::with('category')->find($item['course_id']);
+                if ($course) {
+                    $item['course'] = [
+                        'id' => $course->id,
+                        'name' => $course->category->name . ' - ' . $course->name
+                    ];
+                }
+            }
+            
+            // Konu bilgisini yükle
+            if (isset($item['topic_id']) && $item['topic_id']) {
+                $topic = Topic::find($item['topic_id']);
+                if ($topic) {
+                    $item['topic'] = [
+                        'id' => $topic->id,
+                        'name' => $topic->name,
+                        'duration_minutes' => $topic->duration_minutes
+                    ];
+                }
+            }
+            
+            // Alt konu bilgisini yükle
+            if (isset($item['subtopic_id']) && $item['subtopic_id']) {
+                $subtopic = Subtopic::find($item['subtopic_id']);
+                if ($subtopic) {
+                    $item['subtopic'] = [
+                        'id' => $subtopic->id,
+                        'name' => $subtopic->name,
+                        'duration_minutes' => $subtopic->duration_minutes
+                    ];
+                }
+            }
+            
+            return $item;
+        })->toArray();
+        
+        // Template'in schedule_items'ını güncelle
+        $template->schedule_items = $scheduleItems;
+        
+        // Toplam ders sayısını hesapla
+        $template->items_count = count($scheduleItems);
+        
         return view('admin.templates.show', compact('template'));
     }
 

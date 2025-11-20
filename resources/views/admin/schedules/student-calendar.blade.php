@@ -13,15 +13,15 @@
             </h1>
             <p class="text-muted mb-0">{{ $student->student_number }} - Haftalık Program Görünümü</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
             <a href="{{ route('admin.programs.students') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>
                 Öğrenci Listesi
             </a>
             @if($weeklySchedule->count() > 0)
-                <a href="{{ route('admin.programs.student.calendar.edit', $student) }}" class="btn btn-warning">
+                <a href="{{ route('admin.programs.student.calendar.edit', $student) }}" class="btn btn-info">
                     <i class="fas fa-edit me-2"></i>
-                    Programı Düzenle
+                    Detaylı Düzenle
                 </a>
             @endif
             <a href="{{ route('admin.schedules.create', ['student_id' => $student->id]) }}" class="btn btn-primary">
@@ -150,11 +150,17 @@
 
     <!-- Haftalık Takvim - Excel Formatı -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">
                 <i class="fas fa-calendar-week me-2"></i>
                 Haftalık Program Takvimi
             </h5>
+            @if($weeklySchedule->count() > 0)
+            <div class="alert alert-info mb-0 py-2 px-3">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <small><strong>Hızlı Düzenleme:</strong> Her dersin altındaki gün butonlarına tıklayarak dersi o güne taşıyın.</small>
+            </div>
+            @endif
         </div>
         <div class="card-body p-0">
             @if($weeklySchedule->count() > 0)
@@ -205,58 +211,82 @@
                                 @for($row = 0; $row < $maxPrograms; $row++)
                                     <tr class="program-row">
                                         @foreach($days as $dayKey => $dayName)
-                                            <td class="day-cell">
+                                            <td class="day-cell" data-day="{{ $dayKey }}">
                                                 @if(isset($weeklySchedule[$dayKey]) && isset($weeklySchedule[$dayKey][$row]))
-                                                    @php $program = $weeklySchedule[$dayKey][$row]; @endphp
+                                                    @php 
+                                                        $program = $weeklySchedule[$dayKey][$row];
+                                                        $bgColor = $program['area'] == 'TYT' ? 'primary' : ($program['area'] == 'AYT' ? 'success' : ($program['area'] == 'KPSS' ? 'warning' : ($program['area'] == 'DGS' ? 'info' : 'secondary')));
+                                                    @endphp
                                                     
-                                                    <div class="excel-program-item">
-                                                        <!-- Ders -->
-                                                        <div class="excel-course-row">
-                                                            <span class="course-name">{{ $program['course']->name }}</span>
-                                                            <span class="area-badge badge bg-{{ $program['area'] == 'TYT' ? 'primary' : ($program['area'] == 'AYT' ? 'success' : ($program['area'] == 'KPSS' ? 'warning' : ($program['area'] == 'DGS' ? 'info' : 'secondary'))) }}">
-                                                                {{ $program['area'] }}
-                                                            </span>
+                                                    <div class="excel-program-item-quick" 
+                                                         data-schedule-item-id="{{ $program['schedule_item_id'] }}"
+                                                         data-day="{{ $dayKey }}"
+                                                         data-area="{{ $program['area'] }}">
+                                                        
+                                                        <!-- Üst Bar -->
+                                                        <div class="program-header bg-{{ $bgColor }}">
+                                                            <span class="area-badge-modern">{{ $program['area'] }}</span>
                                                         </div>
                                                         
-                                                        <!-- Konu -->
-                                                        @if($program['topic'])
-                                                            <div class="excel-topic-row">
-                                                                <span class="topic-name">{{ $program['topic']->name }}</span>
+                                                        <!-- Program İçeriği -->
+                                                        <div class="program-content">
+                                                            <!-- Ders -->
+                                                            <div class="course-title">
+                                                                <i class="fas fa-book me-2 text-{{ $bgColor }}"></i>
+                                                                <strong>{{ $program['course']->name }}</strong>
                                                             </div>
                                                             
-                                                            <!-- Alt Konu -->
-                                                            @if($program['subtopic'])
-                                                                <div class="excel-subtopic-row">
-                                                                    <span class="subtopic-name">{{ $program['subtopic']->name }}</span>
+                                                            <!-- Konu -->
+                                                            @if($program['topic'])
+                                                                <div class="topic-title">
+                                                                    <i class="fas fa-bookmark me-2 text-muted"></i>
+                                                                    {{ $program['topic']->name }}
                                                                 </div>
-                                                            @else
-                                                                <!-- Alt konu yoksa boş satır -->
-                                                                <div class="excel-empty-row"></div>
+                                                                
+                                                                <!-- Alt Konu -->
+                                                                @if($program['subtopic'])
+                                                                    <div class="subtopic-title">
+                                                                        <i class="fas fa-caret-right me-2 text-muted"></i>
+                                                                        <small>{{ $program['subtopic']->name }}</small>
+                                                                    </div>
+                                                                @endif
                                                             @endif
-                                                        @else
-                                                            <!-- Konu yoksa boş satır -->
-                                                            <div class="excel-empty-row"></div>
-                                                        @endif
-                                                        
-                                                        <!-- Notlar -->
-                                                        @if($program['notes'])
-                                                            <div class="excel-notes-row">
-                                                                <span class="notes-text">{{ $program['notes'] }}</span>
+                                                            
+                                                            <!-- Notlar -->
+                                                            @if($program['notes'])
+                                                                <div class="program-notes">
+                                                                    <i class="fas fa-sticky-note me-2 text-info"></i>
+                                                                    <small class="text-muted">{{ $program['notes'] }}</small>
+                                                                </div>
+                                                            @endif
+                                                            
+                                                            <!-- Alt Bar - Durum -->
+                                                            <div class="program-footer">
+                                                                @if($program['is_completed'])
+                                                                    <span class="badge bg-success">
+                                                                        <i class="fas fa-check-circle me-1"></i>
+                                                                        Tamamlandı
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge bg-warning text-dark">
+                                                                        <i class="fas fa-clock me-1"></i>
+                                                                        Bekliyor
+                                                                    </span>
+                                                                @endif
                                                             </div>
-                                                        @endif
-                                                        
-                                                        <!-- Durum -->
-                                                        <div class="excel-status-row">
-                                                            @if($program['is_completed'])
-                                                                <span class="status-completed">✓</span>
-                                                            @else
-                                                                <span class="status-pending">⏳</span>
-                                                            @endif
                                                         </div>
-                                                    </div>
-                                                @else
-                                                    <div class="excel-empty-cell">
-                                                        <span class="empty-text">-</span>
+                                                        
+                                                        <!-- Hızlı Gün Değiştirme Butonları -->
+                                                        <div class="day-change-buttons">
+                                                            @foreach(['monday' => 'Pzt', 'tuesday' => 'Sal', 'wednesday' => 'Çar', 'thursday' => 'Per', 'friday' => 'Cum', 'saturday' => 'Cmt', 'sunday' => 'Paz'] as $dKey => $dName)
+                                                                <button type="button" 
+                                                                        class="day-btn {{ $dKey == $dayKey ? 'active' : '' }}"
+                                                                        onclick="moveToDay('{{ $program['schedule_item_id'] }}', '{{ $dKey }}', '{{ $dName }}', this)"
+                                                                        {{ $dKey == $dayKey ? 'disabled' : '' }}>
+                                                                    {{ $dName }}
+                                                                </button>
+                                                            @endforeach
+                                                        </div>
                                                     </div>
                                                 @endif
                                             </td>
@@ -548,5 +578,349 @@
     border-bottom: 1px solid #e3e6f0;
     border-radius: 0.35rem 0.35rem 0 0 !important;
 }
+
+/* Modern Program Card Stilleri */
+.excel-program-item-quick {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    border: 2px solid transparent;
+}
+
+.excel-program-item-quick:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+/* Gün Değiştirme Butonları */
+.day-change-buttons {
+    padding: 8px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+}
+
+.day-btn {
+    flex: 1;
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 2px solid #dee2e6;
+    background: white;
+    color: #6c757d;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.day-btn:hover:not(:disabled) {
+    background: #4e73df;
+    border-color: #4e73df;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(78, 115, 223, 0.3);
+}
+
+.day-btn.active {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+    cursor: default;
+}
+
+.day-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.day-btn.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.day-btn.loading::after {
+    content: '⏳';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Program Header */
+.program-header {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    position: relative;
+}
+
+
+.area-badge-modern {
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    flex: 1;
+    text-align: center;
+}
+
+
+/* Program Content */
+.program-content {
+    padding: 12px;
+}
+
+.course-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+.topic-title {
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #5a6c7d;
+    padding-left: 8px;
+}
+
+.subtopic-title {
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #7f8c8d;
+    padding-left: 16px;
+}
+
+.program-notes {
+    font-size: 11px;
+    padding: 6px 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.program-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Day Cell */
+.day-cell {
+    min-height: 120px;
+    position: relative;
+    transition: background-color 0.2s;
+    vertical-align: top;
+}
+
+/* Loading State */
+.excel-program-item-quick.updating {
+    pointer-events: none;
+    opacity: 0.6;
+    position: relative;
+}
+
+.excel-program-item-quick.updating::after {
+    content: '🔄';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Bildirimlerdeki animasyon */
+.drag-mode-alert {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Dropdown iyileştirmeleri */
+.dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border: none;
+    padding: 4px;
+}
+
+.dropdown-item {
+    border-radius: 4px;
+    padding: 8px 12px;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #e3f2fd;
+    transform: translateX(4px);
+}
+
+.dropdown-item.active {
+    background-color: #2196f3;
+    color: white;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .excel-program-item-quick {
+        font-size: 12px;
+    }
+    
+    .course-title {
+        font-size: 13px;
+    }
+    
+    .program-header {
+        padding: 6px 10px;
+    }
+    
+    .quick-day-select {
+        max-width: 70px;
+        font-size: 10px;
+    }
+}
 </style>
+
+<script>
+const studentId = {{ $student->id }};
+
+// Dersi belirtilen güne taşı
+function moveToDay(scheduleItemId, newDay, dayName, buttonElement) {
+    console.log('📅 Ders taşınıyor:', scheduleItemId, '->', newDay);
+    
+    // Butonu loading durumuna al
+    buttonElement.classList.add('loading');
+    buttonElement.disabled = true;
+    
+    // Tüm butonları devre dışı bırak
+    const allButtons = buttonElement.closest('.day-change-buttons').querySelectorAll('.day-btn');
+    allButtons.forEach(btn => btn.disabled = true);
+    
+    // Backend'e güncelleme gönder
+    fetch(`/admin/programs/student/${studentId}/schedule-items/update-day`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            schedule_item_id: scheduleItemId,
+            day_of_week: newDay
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`✅ ${dayName} gününe taşındı!`, 'success');
+            
+            // Hızlı reload
+            setTimeout(() => {
+                window.location.reload();
+            }, 600);
+        } else {
+            showToast('❌ Hata: ' + (data.message || 'Taşınamadı'), 'danger');
+            // Butonları tekrar aktif et
+            allButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            });
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error:', error);
+        showToast('❌ Bağlantı hatası!', 'danger');
+        // Butonları tekrar aktif et
+        allButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+        });
+    });
+}
+
+// Küçük Toast Bildirimi (Minimal & Fast)
+function showToast(message, type = 'info') {
+    // Eski toast'ları kaldır
+    const oldToasts = document.querySelectorAll('.quick-toast');
+    oldToasts.forEach(toast => toast.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} quick-toast`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 200px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        animation: slideInRight 0.3s ease;
+        font-size: 14px;
+        font-weight: 500;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Auto close
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
+
+// Animasyon stilleri
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
 @endsection

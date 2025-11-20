@@ -152,6 +152,9 @@
                         <li><a class="dropdown-item" href="{{ route('student.daily-tracking') }}">
                             <i class="fas fa-calendar-day me-2"></i>Günlük Takip
                         </a></li>
+                        <li><a class="dropdown-item" href="{{ route('student.question-tracking') }}">
+                            <i class="fas fa-clipboard-list me-2"></i>Soru Takibi
+                        </a></li>
                         <li><a class="dropdown-item" href="{{ route('student.previous-lessons') }}">
                             <i class="fas fa-history me-2"></i>Önceki Dersler
                         </a></li>
@@ -242,19 +245,25 @@
                             Hızlı İşlemler
                         </h5>
                         <div class="row">
-                            <div class="col-md-4 mb-2">
+                            <div class="col-md-3 mb-2">
                                 <a href="{{ route('student.daily-tracking') }}" class="btn btn-primary btn-lg w-100">
                                     <i class="fas fa-calendar-day me-2"></i>
                                     Günlük Takip
                                 </a>
                             </div>
-                            <div class="col-md-4 mb-2">
+                            <div class="col-md-3 mb-2">
+                                <a href="{{ route('student.question-tracking') }}" class="btn btn-warning btn-lg w-100">
+                                    <i class="fas fa-clipboard-list me-2"></i>
+                                    Soru Takibi
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
                                 <a href="{{ route('student.previous-lessons') }}" class="btn btn-info btn-lg w-100">
                                     <i class="fas fa-history me-2"></i>
                                     Önceki Dersler
                                 </a>
                             </div>
-                            <div class="col-md-4 mb-2">
+                            <div class="col-md-3 mb-2">
                                 <a href="{{ route('student.daily-tracking') }}" class="btn btn-success btn-lg w-100">
                                     <i class="fas fa-plus me-2"></i>
                                     Ders Ekle

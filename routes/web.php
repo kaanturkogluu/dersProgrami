@@ -77,6 +77,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::put('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'updateScheduleItems'])->name('programs.student.schedule-items.update');
     Route::post('programs/student/{student}/schedule-items', [StudentScheduleController::class, 'createScheduleItem'])->name('programs.student.schedule-items.create');
     Route::post('programs/student/{student}/calendar/update', [StudentScheduleController::class, 'studentCalendarUpdate'])->name('programs.student.calendar.update');
+    Route::post('programs/student/{student}/schedule-items/update-day', [StudentScheduleController::class, 'updateScheduleItemDay'])->name('programs.student.schedule-items.update-day');
     
     // Daily Reports
     Route::get('daily-reports', [\App\Http\Controllers\Admin\DailyReportsController::class, 'index'])->name('daily-reports.index');
@@ -94,6 +95,9 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('mail/test-connection', [\App\Http\Controllers\Admin\MailController::class, 'testConnection'])->name('mail.test-connection');
     
     // Topic Tracking
+    Route::get('topic-tracking/student-progress', [TopicTrackingController::class, 'studentProgress'])->name('topic-tracking.student-progress');
+    Route::get('topic-tracking/student-progress/{student}', [TopicTrackingController::class, 'getStudentProgress'])->name('topic-tracking.student-progress.data');
+    Route::post('topic-tracking/toggle-status', [TopicTrackingController::class, 'toggleTopicStatus'])->name('topic-tracking.toggle-status');
     Route::resource('topic-tracking', TopicTrackingController::class);
     Route::post('topic-tracking/{topicTracking}/update-status', [TopicTrackingController::class, 'updateStatus'])->name('topic-tracking.update-status');
     Route::get('topic-tracking/subtopics/by-topic', [TopicTrackingController::class, 'getSubtopics'])->name('topic-tracking.subtopics.by-topic');
@@ -121,4 +125,9 @@ Route::prefix('student')->name('student.')->group(function () {
     Route::post('daily-tracking', [\App\Http\Controllers\Student\DailyTrackingController::class, 'store'])->name('daily-tracking.store');
     Route::put('daily-tracking/{tracking}', [\App\Http\Controllers\Student\DailyTrackingController::class, 'update'])->name('daily-tracking.update');
     Route::delete('daily-tracking/{tracking}', [\App\Http\Controllers\Student\DailyTrackingController::class, 'destroy'])->name('daily-tracking.destroy');
+    
+    // Question Tracking
+    Route::get('question-tracking', [\App\Http\Controllers\Student\QuestionTrackingController::class, 'index'])->name('question-tracking');
+    Route::post('question-tracking', [\App\Http\Controllers\Student\QuestionTrackingController::class, 'store'])->name('question-tracking.store');
+    Route::delete('question-tracking/{id}', [\App\Http\Controllers\Student\QuestionTrackingController::class, 'destroy'])->name('question-tracking.destroy');
 });

@@ -544,6 +544,7 @@ class StudentScheduleController extends Controller
         foreach ($schedules as $schedule) {
             foreach ($schedule->scheduleItems as $item) {
                 $weeklySchedule->push([
+                    'schedule_item_id' => $item->id, // Drag & drop için gerekli
                     'schedule_name' => $schedule->name,
                     'area' => $schedule->areas[0] ?? 'TYT', // İlk alanı kullan
                     'day' => $item->day_of_week,
@@ -706,5 +707,69 @@ class StudentScheduleController extends Controller
         $pdf->setOption('defaultFont', 'DejaVu Sans');
         
         return $pdf->download($student->full_name . '_program_' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Update schedule item day via drag & drop
+     */
+    public function updateScheduleItemDay(Request $request, Student $student)
+    {
+        try {
+            $request->validate([
+                'schedule_item_id' => 'required|exists:schedule_items,id',
+                'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'
+            ]);
+
+            $scheduleItem = ScheduleItem::findOrFail($request->schedule_item_id);
+            
+            // Öğrenciye ait olduğunu kontrol et
+            $schedule = $scheduleItem->studentSchedule;
+            if ($schedule->student_id != $student->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bu program öğesine erişim yetkiniz yok.'
+                ], 403);
+            }
+
+            // Günü güncelle
+            $oldDay = $scheduleItem->day_of_week;
+            $scheduleItem->day_of_week = $request->day_of_week;
+            $scheduleItem->save();
+
+            \Log::info('Schedule item day updated', [
+                'schedule_item_id' => $scheduleItem->id,
+                'old_day' => $oldDay,
+                'new_day' => $request->day_of_week,
+                'student_id' => $student->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Program günü başarıyla güncellendi.',
+                'data' => [
+                    'schedule_item_id' => $scheduleItem->id,
+                    'old_day' => $oldDay,
+                    'new_day' => $scheduleItem->day_of_week
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Geçersiz veri.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error updating schedule item day', [
+                'error' => $e->getMessage(),
+                'student_id' => $student->id,
+                'request' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Bir hata oluştu: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -182,6 +182,9 @@
                         <li><a class="dropdown-item" href="{{ route('student.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a></li>
+                        <li><a class="dropdown-item" href="{{ route('student.question-tracking') }}">
+                            <i class="fas fa-clipboard-list me-2"></i>Soru Takibi
+                        </a></li>
                         <li><a class="dropdown-item" href="{{ route('student.previous-lessons') }}">
                             <i class="fas fa-history me-2"></i>Önceki Dersler
                         </a></li>

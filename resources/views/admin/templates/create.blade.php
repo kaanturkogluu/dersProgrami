@@ -107,12 +107,13 @@
                             <th width="25%">Ders</th>
                             <th width="20%">Konu</th>
                             <th width="20%">Alt Konu</th>
-                            <th width="15%">Notlar</th>
+                            <th width="10%">Notlar</th>
+                            <th width="5%">İşlem</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleItems">
                         <tr class="empty-row">
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 <i class="fas fa-plus-circle me-2"></i>
                                 Henüz ders eklenmemiş. "Ders Ekle" butonuna tıklayarak başlayın.
                             </td>
@@ -175,6 +176,11 @@
         </td>
         <td>
             <input type="text" class="form-control" name="schedule_items[INDEX][notes]" placeholder="Notlar...">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeScheduleItem(this)">
+                <i class="fas fa-trash"></i>
+            </button>
         </td>
     </tr>
 </template>
@@ -409,9 +415,17 @@ function loadTopics(courseSelect) {
     }
     
     // Konuları yükle
+    console.log('Loading topics for course:', courseId);
     fetch(`{{ route('admin.schedules.topics.by-course') }}?course_id=${courseId}`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Topics loaded:', data);
             topicSelect.innerHTML = '<option value="">Konu Seçin</option>';
             if (data.topics && data.topics.length > 0) {
                 data.topics.forEach(topic => {
@@ -420,39 +434,91 @@ function loadTopics(courseSelect) {
                     option.textContent = `${topic.name} (${topic.duration_minutes} dk)`;
                     topicSelect.appendChild(option);
                 });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Bu ders için konu bulunamadı';
+                option.disabled = true;
+                topicSelect.appendChild(option);
             }
         })
         .catch(error => {
             console.error('Error loading topics:', error);
+            topicSelect.innerHTML = '<option value="">Konu yüklenirken hata oluştu</option>';
         });
 }
 
 // Alt konuları yükle
 function loadSubtopics(topicSelect) {
+    console.log('loadSubtopics called');
+    console.log('topicSelect:', topicSelect);
+    
     const topicId = topicSelect.value;
+    console.log('topicId:', topicId);
+    
     const scheduleItem = topicSelect.closest('.schedule-item');
+    console.log('scheduleItem:', scheduleItem);
+    
+    if (!scheduleItem) {
+        console.error('Could not find schedule-item parent!');
+        return;
+    }
+    
     const subtopicSelect = scheduleItem.querySelector('.subtopic-select');
+    console.log('subtopicSelect:', subtopicSelect);
+    
+    if (!subtopicSelect) {
+        console.error('Could not find subtopic-select!');
+        return;
+    }
     
     if (!topicId) {
+        console.log('No topicId, clearing subtopics');
         subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
         return;
     }
     
-    fetch(`{{ route('admin.schedules.subtopics.by-topic') }}?topic_id=${topicId}`)
-        .then(response => response.json())
+    console.log('Loading subtopics for topic:', topicId);
+    const url = `{{ route('admin.schedules.subtopics.by-topic') }}?topic_id=${topicId}`;
+    console.log('Fetching URL:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Subtopics data received:', data);
+            console.log('Subtopics array:', data.subtopics);
+            console.log('Subtopics count:', data.subtopics ? data.subtopics.length : 0);
+            
             subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
             if (data.subtopics && data.subtopics.length > 0) {
                 data.subtopics.forEach(subtopic => {
+                    console.log('Adding subtopic:', subtopic.name);
                     const option = document.createElement('option');
                     option.value = subtopic.id;
                     option.textContent = `${subtopic.name} (${subtopic.duration_minutes} dk)`;
                     subtopicSelect.appendChild(option);
                 });
+                console.log('All subtopics added successfully');
+            } else {
+                console.log('No subtopics found for this topic');
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Bu konu için alt konu bulunamadı';
+                option.disabled = true;
+                subtopicSelect.appendChild(option);
             }
         })
         .catch(error => {
             console.error('Error loading subtopics:', error);
+            console.error('Error details:', error.message, error.stack);
+            subtopicSelect.innerHTML = '<option value="">Alt konu yüklenirken hata oluştu</option>';
         });
 }
 

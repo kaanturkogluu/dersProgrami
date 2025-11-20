@@ -125,7 +125,7 @@
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>
-                                    <span class="badge bg-secondary">{{ $item['day_name'] ?? ucfirst($item['day_of_week']) }}</span>
+                                    <span class="badge bg-info">{{ $item['day_name'] ?? ucfirst($item['day_of_week']) }}</span>
                                 </td>
                                 <td>
                                     @if(isset($item['course']))
@@ -137,6 +137,9 @@
                                 <td>
                                     @if(isset($item['topic']) && $item['topic'])
                                         {{ $item['topic']['name'] }}
+                                        @if(isset($item['topic']['duration_minutes']))
+                                            <small class="text-muted">({{ $item['topic']['duration_minutes'] }} dk)</small>
+                                        @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
@@ -144,6 +147,9 @@
                                 <td>
                                     @if(isset($item['subtopic']) && $item['subtopic'])
                                         {{ $item['subtopic']['name'] }}
+                                        @if(isset($item['subtopic']['duration_minutes']))
+                                            <small class="text-muted">({{ $item['subtopic']['duration_minutes'] }} dk)</small>
+                                        @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif

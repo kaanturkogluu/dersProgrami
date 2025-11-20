@@ -131,6 +131,16 @@
             </div>
             <div class="card-body">
                 <div class="list-group list-group-flush">
+                    <a href="{{ route('admin.topic-tracking.student-progress') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-clipboard-check text-success me-3"></i>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Öğrenci Ders Takibi</h6>
+                                <small class="text-muted">Hangi öğrenci hangi derste hangi konuda?</small>
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
                     <a href="{{ route('admin.topic-tracking.index') }}" class="list-group-item list-group-item-action">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-tasks text-primary me-3"></i>

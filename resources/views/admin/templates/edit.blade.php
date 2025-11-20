@@ -142,7 +142,10 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select class="form-select topic-select" name="schedule_items[{{ $index }}][topic_id]" onchange="loadSubtopics(this)">
+                                    <select class="form-select topic-select" 
+                                            name="schedule_items[{{ $index }}][topic_id]" 
+                                            onchange="loadSubtopics(this)"
+                                            data-selected-topic="{{ $item['topic_id'] ?? '' }}">
                                         <option value="">Konu Seçin</option>
                                         @if(isset($item['topic_id']) && $item['topic_id'])
                                             @php
@@ -155,7 +158,9 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select class="form-select subtopic-select" name="schedule_items[{{ $index }}][subtopic_id]">
+                                    <select class="form-select subtopic-select" 
+                                            name="schedule_items[{{ $index }}][subtopic_id]"
+                                            data-selected-subtopic="{{ $item['subtopic_id'] ?? '' }}">
                                         <option value="">Alt Konu Seçin</option>
                                         @if(isset($item['subtopic_id']) && $item['subtopic_id'])
                                             @php
@@ -437,9 +442,17 @@ function loadTopics(courseSelect) {
     }
     
     // Konuları yükle
+    console.log('Loading topics for course:', courseId);
     fetch(`{{ route('admin.schedules.topics.by-course') }}?course_id=${courseId}`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Topics loaded:', data);
             topicSelect.innerHTML = '<option value="">Konu Seçin</option>';
             if (data.topics && data.topics.length > 0) {
                 data.topics.forEach(topic => {
@@ -448,39 +461,91 @@ function loadTopics(courseSelect) {
                     option.textContent = `${topic.name} (${topic.duration_minutes} dk)`;
                     topicSelect.appendChild(option);
                 });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Bu ders için konu bulunamadı';
+                option.disabled = true;
+                topicSelect.appendChild(option);
             }
         })
         .catch(error => {
             console.error('Error loading topics:', error);
+            topicSelect.innerHTML = '<option value="">Konu yüklenirken hata oluştu</option>';
         });
 }
 
 // Alt konuları yükle
 function loadSubtopics(topicSelect) {
+    console.log('loadSubtopics called');
+    console.log('topicSelect:', topicSelect);
+    
     const topicId = topicSelect.value;
+    console.log('topicId:', topicId);
+    
     const scheduleItem = topicSelect.closest('.schedule-item');
+    console.log('scheduleItem:', scheduleItem);
+    
+    if (!scheduleItem) {
+        console.error('Could not find schedule-item parent!');
+        return;
+    }
+    
     const subtopicSelect = scheduleItem.querySelector('.subtopic-select');
+    console.log('subtopicSelect:', subtopicSelect);
+    
+    if (!subtopicSelect) {
+        console.error('Could not find subtopic-select!');
+        return;
+    }
     
     if (!topicId) {
+        console.log('No topicId, clearing subtopics');
         subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
         return;
     }
     
-    fetch(`{{ route('admin.schedules.subtopics.by-topic') }}?topic_id=${topicId}`)
-        .then(response => response.json())
+    console.log('Loading subtopics for topic:', topicId);
+    const url = `{{ route('admin.schedules.subtopics.by-topic') }}?topic_id=${topicId}`;
+    console.log('Fetching URL:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Subtopics data received:', data);
+            console.log('Subtopics array:', data.subtopics);
+            console.log('Subtopics count:', data.subtopics ? data.subtopics.length : 0);
+            
             subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
             if (data.subtopics && data.subtopics.length > 0) {
                 data.subtopics.forEach(subtopic => {
+                    console.log('Adding subtopic:', subtopic.name);
                     const option = document.createElement('option');
                     option.value = subtopic.id;
                     option.textContent = `${subtopic.name} (${subtopic.duration_minutes} dk)`;
                     subtopicSelect.appendChild(option);
                 });
+                console.log('All subtopics added successfully');
+            } else {
+                console.log('No subtopics found for this topic');
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Bu konu için alt konu bulunamadı';
+                option.disabled = true;
+                subtopicSelect.appendChild(option);
             }
         })
         .catch(error => {
             console.error('Error loading subtopics:', error);
+            console.error('Error details:', error.message, error.stack);
+            subtopicSelect.innerHTML = '<option value="">Alt konu yüklenirken hata oluştu</option>';
         });
 }
 
@@ -553,9 +618,100 @@ document.getElementById('templateForm').addEventListener('submit', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     filterCoursesByArea();
     
+    // Mevcut satırlar için konuları yükle
+    loadExistingTopicsAndSubtopics();
+    
     // Hızlı ekleme modalı için event listener'lar
     setupQuickAddModal();
 });
+
+// Mevcut satırlar için konuları ve alt konuları yükle
+function loadExistingTopicsAndSubtopics() {
+    console.log('Loading existing topics and subtopics...');
+    const scheduleItems = document.querySelectorAll('.schedule-item');
+    console.log('Found schedule items:', scheduleItems.length);
+    
+    scheduleItems.forEach((item, index) => {
+        const courseSelect = item.querySelector('.course-select');
+        const topicSelect = item.querySelector('.topic-select');
+        const subtopicSelect = item.querySelector('.subtopic-select');
+        
+        const courseId = courseSelect.value;
+        const selectedTopicId = topicSelect.getAttribute('data-selected-topic') || topicSelect.value;
+        const selectedSubtopicId = subtopicSelect.getAttribute('data-selected-subtopic') || subtopicSelect.value;
+        
+        console.log(`Item ${index}: courseId=${courseId}, topicId=${selectedTopicId}, subtopicId=${selectedSubtopicId}`);
+        
+        // Eğer ders seçiliyse, konuları yükle
+        if (courseId) {
+            console.log(`Loading topics for existing course: ${courseId}`);
+            fetch(`{{ route('admin.schedules.topics.by-course') }}?course_id=${courseId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`Topics loaded for item ${index}:`, data);
+                    
+                    topicSelect.innerHTML = '<option value="">Konu Seçin</option>';
+                    if (data.topics && data.topics.length > 0) {
+                        data.topics.forEach(topic => {
+                            const option = document.createElement('option');
+                            option.value = topic.id;
+                            option.textContent = `${topic.name} (${topic.duration_minutes} dk)`;
+                            if (topic.id == selectedTopicId) {
+                                option.selected = true;
+                                console.log(`Selected topic: ${topic.name}`);
+                            }
+                            topicSelect.appendChild(option);
+                        });
+                        
+                        // Eğer konu seçiliyse, alt konuları da yükle
+                        if (selectedTopicId) {
+                            console.log(`Loading subtopics for existing topic: ${selectedTopicId}`);
+                            fetch(`{{ route('admin.schedules.subtopics.by-topic') }}?topic_id=${selectedTopicId}`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    console.log(`Subtopics loaded for item ${index}:`, data);
+                                    subtopicSelect.innerHTML = '<option value="">Alt Konu Seçin</option>';
+                                    if (data.subtopics && data.subtopics.length > 0) {
+                                        data.subtopics.forEach(subtopic => {
+                                            const option = document.createElement('option');
+                                            option.value = subtopic.id;
+                                            option.textContent = `${subtopic.name} (${subtopic.duration_minutes} dk)`;
+                                            if (subtopic.id == selectedSubtopicId) {
+                                                option.selected = true;
+                                                console.log(`Selected subtopic: ${subtopic.name}`);
+                                            }
+                                            subtopicSelect.appendChild(option);
+                                        });
+                                    } else {
+                                        console.log(`No subtopics found for topic ${selectedTopicId}`);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error(`Error loading subtopics for item ${index}:`, error);
+                                });
+                        }
+                    } else {
+                        console.log(`No topics found for course ${courseId}`);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error loading topics for item ${index}:`, error);
+                });
+        }
+    });
+    
+    console.log('Finished loading existing topics and subtopics');
+}
 
 // Hızlı ekleme modalı için event listener'ları ayarla
 function setupQuickAddModal() {
