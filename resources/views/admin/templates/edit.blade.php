@@ -229,16 +229,24 @@
                 <div class="row">
                     <div class="col-md-6">
                         <h6>Dersleri Seçin:</h6>
-                        <div id="courseCheckboxes" style="max-height: 300px; overflow-y: auto;">
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllCourses()">
+                                <i class="fas fa-check-double"></i> Tümünü Seç
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllCourses()">
+                                <i class="fas fa-times"></i> Tümünü Kaldır
+                            </button>
+                        </div>
+                        <div id="courseCheckboxes" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
                             @foreach($courses as $course)
-                            <div class="form-check">
+                            <div class="form-check mb-2">
                                 <input class="form-check-input course-checkbox" type="checkbox" 
                                        value="{{ $course->id }}" 
                                        data-course-name="{{ $course->name }}" 
                                        data-course-category="{{ $course->category->name }}"
-                                       id="course_{{ $course->id }}">
-                                <label class="form-check-label" for="course_{{ $course->id }}">
-                                    {{ $course->name }} <small class="text-muted">({{ $course->category->name }})</small>
+                                       id="quick_course_{{ $course->id }}">
+                                <label class="form-check-label" for="quick_course_{{ $course->id }}" style="cursor: pointer;">
+                                    <strong>{{ $course->category->name }}</strong> - {{ $course->name }}
                                 </label>
                             </div>
                             @endforeach
@@ -247,33 +255,43 @@
                     
                     <div class="col-md-6">
                         <h6>Günleri Seçin:</h6>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="monday" id="day_monday">
-                            <label class="form-check-label" for="day_monday">Pazartesi</label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllDays()">
+                                <i class="fas fa-check-double"></i> Tümünü Seç
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllDays()">
+                                <i class="fas fa-times"></i> Tümünü Kaldır
+                            </button>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="tuesday" id="day_tuesday">
-                            <label class="form-check-label" for="day_tuesday">Salı</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="wednesday" id="day_wednesday">
-                            <label class="form-check-label" for="day_wednesday">Çarşamba</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="thursday" id="day_thursday">
-                            <label class="form-check-label" for="day_thursday">Perşembe</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="friday" id="day_friday">
-                            <label class="form-check-label" for="day_friday">Cuma</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="saturday" id="day_saturday">
-                            <label class="form-check-label" for="day_saturday">Cumartesi</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input day-checkbox" type="checkbox" value="sunday" id="day_sunday">
-                            <label class="form-check-label" for="day_sunday">Pazar</label>
+                        <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="monday" id="day_monday">
+                                <label class="form-check-label" for="day_monday" style="cursor: pointer;">Pazartesi</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="tuesday" id="day_tuesday">
+                                <label class="form-check-label" for="day_tuesday" style="cursor: pointer;">Salı</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="wednesday" id="day_wednesday">
+                                <label class="form-check-label" for="day_wednesday" style="cursor: pointer;">Çarşamba</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="thursday" id="day_thursday">
+                                <label class="form-check-label" for="day_thursday" style="cursor: pointer;">Perşembe</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="friday" id="day_friday">
+                                <label class="form-check-label" for="day_friday" style="cursor: pointer;">Cuma</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="saturday" id="day_saturday">
+                                <label class="form-check-label" for="day_saturday" style="cursor: pointer;">Cumartesi</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input day-checkbox" type="checkbox" value="sunday" id="day_sunday">
+                                <label class="form-check-label" for="day_sunday" style="cursor: pointer;">Pazar</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -774,6 +792,9 @@ function addQuickItems() {
     const selectedCourses = Array.from(document.querySelectorAll('.course-checkbox:checked'));
     const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked'));
     
+    console.log('Selected courses:', selectedCourses.length);
+    console.log('Selected days:', selectedDays.length);
+    
     if (selectedCourses.length === 0) {
         showAlert('warning', 'Lütfen en az bir ders seçin.');
         return;
@@ -784,28 +805,39 @@ function addQuickItems() {
         return;
     }
     
+    let totalAdded = 0;
+    
     // Her ders için her gün için satır ekle
-    selectedCourses.forEach(course => {
+    selectedCourses.forEach((course, courseIndex) => {
         const courseId = course.value;
         const courseName = course.getAttribute('data-course-name');
         
-        selectedDays.forEach(day => {
+        console.log(`Processing course ${courseIndex + 1}: ${courseName} (ID: ${courseId})`);
+        
+        selectedDays.forEach((day, dayIndex) => {
             const dayValue = day.value;
             const dayName = getDayName(dayValue);
             
+            console.log(`  Adding day ${dayIndex + 1}: ${dayName}`);
+            
             // Satır ekle
             addQuickScheduleItem(courseId, dayValue, courseName, dayName);
+            totalAdded++;
         });
     });
     
-    // Modal'ı kapat
-    const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddModal'));
-    modal.hide();
+    console.log('Total rows added:', totalAdded);
     
-    // Seçimleri temizle
+    // Seçimleri temizle (modal kapatılmadan ÖNCE)
     clearQuickAddSelections();
     
-    showAlert('success', `${selectedCourses.length} ders, ${selectedDays.length} gün için toplam ${selectedCourses.length * selectedDays.length} satır eklendi.`);
+    // Modal'ı kapat
+    const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    showAlert('success', `${selectedCourses.length} ders, ${selectedDays.length} gün için toplam ${totalAdded} satır eklendi.`);
 }
 
 // Hızlı ekleme için satır ekle
@@ -856,6 +888,38 @@ function clearQuickAddSelections() {
         checkbox.checked = false;
     });
     
+    updateQuickAddPreview();
+}
+
+// Tüm dersleri seç
+function selectAllCourses() {
+    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateQuickAddPreview();
+}
+
+// Tüm dersleri kaldır
+function deselectAllCourses() {
+    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateQuickAddPreview();
+}
+
+// Tüm günleri seç
+function selectAllDays() {
+    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateQuickAddPreview();
+}
+
+// Tüm günleri kaldır
+function deselectAllDays() {
+    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
     updateQuickAddPreview();
 }
 </script>
