@@ -195,7 +195,19 @@ class StudentScheduleController extends Controller
      */
     public function destroy(StudentSchedule $schedule)
     {
+        $student = $schedule->student;
+        
+        // Program öğelerini de sil (cascade delete)
+        $schedule->scheduleItems()->delete();
+        
+        // Programı sil
         $schedule->delete();
+
+        // Eğer calendar sayfasından gelindiyse oraya, değilse index'e yönlendir
+        if (request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'calendar')) {
+            return redirect()->route('admin.programs.student.calendar', $student)
+                ->with('success', 'Program başarıyla silindi.');
+        }
 
         return redirect()->route('admin.schedules.index')
             ->with('success', 'Program başarıyla silindi.');

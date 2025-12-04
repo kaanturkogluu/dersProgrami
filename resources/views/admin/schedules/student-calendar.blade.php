@@ -107,10 +107,22 @@
                         <div class="col-md-6 col-lg-4 mb-3">
                             <div class="card border-{{ $schedule->status == 'active' ? 'success' : ($schedule->status == 'upcoming' ? 'warning' : 'secondary') }}">
                                 <div class="card-body">
-                                    <h6 class="card-title">
-                                        <i class="fas fa-calendar-alt me-2"></i>
-                                        {{ $schedule->name }}
-                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-calendar-alt me-2"></i>
+                                            {{ $schedule->name }}
+                                        </h6>
+                                        <form action="{{ route('admin.schedules.destroy', $schedule) }}" 
+                                              method="POST" 
+                                              class="d-inline"
+                                              onsubmit="return confirm('{{ $schedule->name }} programını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Programı Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <small class="text-muted">Başlangıç:</small>
                                         <strong>{{ $schedule->start_date->format('d.m.Y') }}</strong>
