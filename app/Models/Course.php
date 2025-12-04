@@ -31,4 +31,13 @@ class Course extends Model
     {
         return $this->hasMany(Topic::class)->orderBy('order_index');
     }
+
+    /**
+     * Dersin alanlarını getir (Category name'den)
+     */
+    public function getAreasAttribute()
+    {
+        // Category name'i array olarak döndür
+        return $this->category ? [$this->category->name] : [];
+    }
 }

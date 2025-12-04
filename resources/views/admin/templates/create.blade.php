@@ -216,11 +216,13 @@
                         </div>
                         <div id="courseCheckboxes" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
                             @foreach($courses as $course)
-                            <div class="form-check mb-2">
+                            <div class="form-check mb-2 course-checkbox-item" 
+                                 data-course-areas="{{ json_encode($course->areas) }}">
                                 <input class="form-check-input course-checkbox" type="checkbox" 
                                        value="{{ $course->id }}" 
                                        data-course-name="{{ $course->name }}" 
                                        data-course-category="{{ $course->category->name }}"
+                                       data-course-areas="{{ json_encode($course->areas) }}"
                                        id="quick_course_{{ $course->id }}">
                                 <label class="form-check-label" for="quick_course_{{ $course->id }}" style="cursor: pointer;">
                                     <strong>{{ $course->category->name }}</strong> - {{ $course->name }}
@@ -349,8 +351,9 @@ document.querySelectorAll('.area-checkbox').forEach(checkbox => {
 // Dersleri alana göre filtrele
 function filterCoursesByArea() {
     const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
-    const courseSelects = document.querySelectorAll('.course-select');
     
+    // Dropdown select'lerdeki dersleri filtrele
+    const courseSelects = document.querySelectorAll('.course-select');
     courseSelects.forEach(select => {
         const options = select.querySelectorAll('option');
         options.forEach(option => {
@@ -359,11 +362,59 @@ function filterCoursesByArea() {
                 return;
             }
             
-            const courseAreas = JSON.parse(option.getAttribute('data-areas') || '[]');
-            const hasMatchingArea = selectedAreas.some(area => courseAreas.includes(area));
-            
-            option.style.display = hasMatchingArea ? 'block' : 'none';
+            try {
+                const courseAreas = JSON.parse(option.getAttribute('data-areas') || '[]');
+                if (!Array.isArray(courseAreas) || courseAreas === null) {
+                    option.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+                    return;
+                }
+                
+                const hasMatchingArea = selectedAreas.length === 0 || selectedAreas.some(area => courseAreas.includes(area));
+                option.style.display = hasMatchingArea ? 'block' : 'none';
+            } catch (e) {
+                console.error('Error parsing course areas:', e);
+                option.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+            }
         });
+    });
+    
+    // Hızlı ekleme modalındaki checkbox'ları filtrele
+    filterQuickAddCourses(selectedAreas);
+}
+
+// Hızlı ekleme modalındaki dersleri filtrele
+function filterQuickAddCourses(selectedAreas) {
+    const modal = document.getElementById('quickAddModal');
+    if (!modal) return;
+    
+    const courseCheckboxItems = modal.querySelectorAll('.course-checkbox-item');
+    
+    courseCheckboxItems.forEach(item => {
+        const checkbox = item.querySelector('.course-checkbox');
+        if (!checkbox) return;
+        
+        const courseAreasAttr = checkbox.getAttribute('data-course-areas') || item.getAttribute('data-course-areas') || '[]';
+        
+        try {
+            const courseAreas = JSON.parse(courseAreasAttr);
+            if (!Array.isArray(courseAreas) || courseAreas === null) {
+                // Eğer alan bilgisi yoksa, seçili alan yoksa göster
+                item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+                return;
+            }
+            
+            // Seçili alanlardan en az biri dersin alanları içinde mi?
+            // Eğer hiç alan seçilmemişse tüm dersleri göster
+            if (selectedAreas.length === 0) {
+                item.style.display = 'block';
+            } else {
+                const hasMatchingArea = selectedAreas.some(area => courseAreas.includes(area));
+                item.style.display = hasMatchingArea ? 'block' : 'none';
+            }
+        } catch (e) {
+            console.error('Error parsing course areas in modal:', e);
+            item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+        }
     });
 }
 
@@ -611,6 +662,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Hızlı ekleme modalı için event listener'lar
     setupQuickAddModal();
+    
+    // Modal açıldığında dersleri filtrele
+    const quickAddModal = document.getElementById('quickAddModal');
+    if (quickAddModal) {
+        quickAddModal.addEventListener('show.bs.modal', function() {
+            filterCoursesByArea();
+        });
+    }
 });
 
 // Hızlı ekleme modalı için event listener'ları ayarla
@@ -782,20 +841,29 @@ function clearQuickAddSelections() {
     updateQuickAddPreview();
 }
 
-// Tüm dersleri seç
+// Tüm dersleri seç (sadece görünen dersleri)
 function selectAllCourses() {
-    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
-        checkbox.checked = true;
-    });
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.course-checkbox-item[style*="block"], .course-checkbox-item:not([style*="none"])').forEach(item => {
+            const checkbox = item.querySelector('.course-checkbox');
+            if (checkbox && item.style.display !== 'none') {
+                checkbox.checked = true;
+            }
+        });
+        updateQuickAddPreview();
+    }
 }
 
 // Tüm dersleri kaldır
 function deselectAllCourses() {
-    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.course-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateQuickAddPreview();
+    }
 }
 
 // Tüm günleri seç
