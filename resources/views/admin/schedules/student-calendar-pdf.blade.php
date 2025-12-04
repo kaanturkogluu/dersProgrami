@@ -37,6 +37,12 @@
             color: #666;
         }
         
+        .header h3 {
+            font-size: 12px;
+            margin: 1px 0;
+            color: #888;
+        }
+        
         .student-info {
             display: flex;
             justify-content: space-between;
@@ -142,7 +148,10 @@
 <body>
     <div class="header">
         <h1>{{ $student->full_name }} - Program Takvimi</h1>
-        <h2>{{ $student->student_number }} - Haftalık Program Görünümü</h2>
+        @if($schedules->count() > 0)
+            <h2>{{ $schedules->first()->name }}</h2>
+        @endif
+        <h3>{{ $student->student_number }} - Haftalık Program Görünümü</h3>
     </div>
     
     <div class="student-info">
@@ -175,20 +184,51 @@
                         'saturday' => 'Cumartesi',
                         'sunday' => 'Pazar'
                     ];
+                    
+                    // Eğer orderedDays varsa onu kullan, yoksa varsayılan sırayı kullan
+                    $displayDays = isset($orderedDays) && is_array($orderedDays) ? $orderedDays : array_keys($days);
+                    
+                    // İlk günün tarihini hesapla
+                    $startDate = $firstScheduleStartDate ?? ($schedules->count() > 0 ? $schedules->first()->start_date : now());
+                    $startDateCarbon = \Carbon\Carbon::parse($startDate);
+                    
+                    // İlk gösterilecek günün key'ini al
+                    $firstDisplayDayKey = isset($displayDays[0]) ? $displayDays[0] : 'monday';
+                    
+                    // Carbon'ın dayOfWeek formatı: 0=Pazar, 1=Pazartesi, ..., 6=Cumartesi
+                    // Bizim sistem: monday=1, tuesday=2, ..., sunday=7
+                    $dayToCarbonNumber = ['monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6, 'sunday' => 0];
+                    $firstDisplayDayCarbonNumber = $dayToCarbonNumber[$firstDisplayDayKey] ?? 1;
+                    
+                    // Start date'in Carbon dayOfWeek değeri
+                    $startDateDayOfWeek = $startDateCarbon->dayOfWeek;
+                    
+                    // İlk gösterilecek günün tarihini hesapla
+                    if ($startDateDayOfWeek == $firstDisplayDayCarbonNumber) {
+                        // Start date zaten ilk gösterilecek gün ise
+                        $firstDayDate = $startDateCarbon->copy();
+                    } else {
+                        // Start date'den ilk gösterilecek güne kadar kaç gün var?
+                        $daysDiff = ($firstDisplayDayCarbonNumber - $startDateDayOfWeek + 7) % 7;
+                        if ($daysDiff == 0) {
+                            $daysDiff = 7; // Eğer aynı günse, bir sonraki haftaya geç
+                        }
+                        $firstDayDate = $startDateCarbon->copy()->addDays($daysDiff);
+                    }
                 @endphp
                 
-                @foreach($days as $dayKey => $dayName)
+                @foreach($displayDays as $dayIndex => $dayKey)
+                    @php
+                        $dayName = $days[$dayKey] ?? $dayKey;
+                        
+                        // Her günün tarihini hesapla
+                        // İlk günden itibaren kaç gün eklenecek
+                        $daysToAdd = $dayIndex;
+                        $dayDate = $firstDayDate->copy()->addDays($daysToAdd);
+                    @endphp
                     <th class="day-header">
                         {{ $dayName }}
-                        @if($schedules->count() > 0)
-                            @php
-                                $firstSchedule = $schedules->first();
-                                $startDate = $firstSchedule->start_date;
-                                $dayIndex = array_search($dayKey, array_keys($days));
-                                $dayDate = $startDate->copy()->addDays($dayIndex);
-                            @endphp
-                            <br><small>{{ $dayDate->format('d.m') }}</small>
-                        @endif
+                        <br><small>{{ $dayDate->format('d.m') }}</small>
                     </th>
                 @endforeach
             </tr>
@@ -197,7 +237,7 @@
             @php
                 // En fazla program olan günü bul
                 $maxPrograms = 0;
-                foreach($days as $dayKey => $dayName) {
+                foreach($displayDays as $dayKey) {
                     if(isset($weeklySchedule[$dayKey])) {
                         $maxPrograms = max($maxPrograms, $weeklySchedule[$dayKey]->count());
                     }
@@ -206,7 +246,7 @@
             
             @for($row = 0; $row < $maxPrograms; $row++)
                 <tr>
-                    @foreach($days as $dayKey => $dayName)
+                    @foreach($displayDays as $dayKey)
                         <td>
                             @if(isset($weeklySchedule[$dayKey]) && isset($weeklySchedule[$dayKey][$row]))
                                 @php $program = $weeklySchedule[$dayKey][$row]; @endphp
@@ -245,3 +285,4 @@
     </div>
 </body>
 </html>
+

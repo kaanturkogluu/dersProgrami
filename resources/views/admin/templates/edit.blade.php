@@ -386,10 +386,30 @@ function filterCoursesByArea() {
                 return;
             }
             
-            const courseAreas = JSON.parse(option.getAttribute('data-areas') || '[]');
-            const hasMatchingArea = selectedAreas.some(area => courseAreas.includes(area));
+            // data-areas attribute'unu kontrol et
+            const dataAreas = option.getAttribute('data-areas');
+            if (!dataAreas) {
+                // Eğer data-areas yoksa, option'u göster (hata vermemek için)
+                option.style.display = 'block';
+                return;
+            }
             
-            option.style.display = hasMatchingArea ? 'block' : 'none';
+            try {
+                const courseAreas = JSON.parse(dataAreas);
+                
+                // courseAreas'ın bir array olduğundan ve null olmadığından emin ol
+                if (!Array.isArray(courseAreas) || courseAreas === null) {
+                    option.style.display = 'block';
+                    return;
+                }
+                
+                const hasMatchingArea = selectedAreas.length === 0 || selectedAreas.some(area => courseAreas.includes(area));
+                option.style.display = hasMatchingArea ? 'block' : 'none';
+            } catch (e) {
+                // JSON parse hatası durumunda option'u göster
+                console.error('Error parsing course areas:', e);
+                option.style.display = 'block';
+            }
         });
     });
 }
@@ -442,6 +462,9 @@ function addScheduleItem() {
     filterCoursesByArea();
     
     scheduleItemIndex++;
+    
+    // Index'leri güncelle (sıralı olması için)
+    updateRowIndices();
 }
 
 // Konuları yükle
@@ -572,8 +595,9 @@ function removeScheduleItem(button) {
     const scheduleItem = button.closest('.schedule-item');
     scheduleItem.remove();
     
-    // Satır numaralarını güncelle
+    // Satır numaralarını ve index'leri güncelle
     updateRowNumbers();
+    updateRowIndices();
     
     // Eğer hiç satır kalmadıysa boş satırı göster
     const tbody = document.getElementById('scheduleItems');
@@ -591,11 +615,29 @@ function updateRowNumbers() {
     const scheduleItems = document.querySelectorAll('.schedule-item');
     scheduleItems.forEach((item, index) => {
         const rowNumber = item.querySelector('.row-number');
-        rowNumber.textContent = index + 1;
+        if (rowNumber) rowNumber.textContent = index + 1;
     });
 }
 
-// Form gönderilmeden önce validasyon
+// Satır index'lerini güncelle (form gönderilmeden önce de çağrılabilir)
+function updateRowIndices() {
+    const scheduleItems = document.querySelectorAll('.schedule-item');
+    scheduleItems.forEach((row, index) => {
+        const daySelect = row.querySelector('.day-select');
+        const courseSelect = row.querySelector('.course-select');
+        const topicSelect = row.querySelector('.topic-select');
+        const subtopicSelect = row.querySelector('.subtopic-select');
+        const notesInput = row.querySelector('input[name*="[notes]"]');
+        
+        if (daySelect) daySelect.name = `schedule_items[${index}][day_of_week]`;
+        if (courseSelect) courseSelect.name = `schedule_items[${index}][course_id]`;
+        if (topicSelect) topicSelect.name = `schedule_items[${index}][topic_id]`;
+        if (subtopicSelect) subtopicSelect.name = `schedule_items[${index}][subtopic_id]`;
+        if (notesInput) notesInput.name = `schedule_items[${index}][notes]`;
+    });
+}
+
+// Form gönderilmeden önce validasyon ve index düzenleme
 document.getElementById('templateForm').addEventListener('submit', function(e) {
     const selectedAreas = document.querySelectorAll('.area-checkbox:checked');
     const scheduleItems = document.querySelectorAll('.schedule-item');
@@ -611,6 +653,26 @@ document.getElementById('templateForm').addEventListener('submit', function(e) {
         showAlert('danger', 'Lütfen en az bir ders ekleyin.');
         return;
     }
+    
+    // Index'leri sıralı hale getir (0, 1, 2, 3...)
+    scheduleItems.forEach((row, index) => {
+        const daySelect = row.querySelector('.day-select');
+        const courseSelect = row.querySelector('.course-select');
+        const topicSelect = row.querySelector('.topic-select');
+        const subtopicSelect = row.querySelector('.subtopic-select');
+        const notesInput = row.querySelector('input[name*="[notes]"]');
+        
+        // Tüm input/select name attribute'larını güncelle
+        if (daySelect) daySelect.name = `schedule_items[${index}][day_of_week]`;
+        if (courseSelect) courseSelect.name = `schedule_items[${index}][course_id]`;
+        if (topicSelect) topicSelect.name = `schedule_items[${index}][topic_id]`;
+        if (subtopicSelect) subtopicSelect.name = `schedule_items[${index}][subtopic_id]`;
+        if (notesInput) notesInput.name = `schedule_items[${index}][notes]`;
+        
+        // Satır numarasını güncelle
+        const rowNumber = row.querySelector('.row-number');
+        if (rowNumber) rowNumber.textContent = index + 1;
+    });
     
     // Her satırda gün ve ders seçili mi kontrol et
     for (let i = 0; i < scheduleItems.length; i++) {
@@ -733,22 +795,31 @@ function loadExistingTopicsAndSubtopics() {
 
 // Hızlı ekleme modalı için event listener'ları ayarla
 function setupQuickAddModal() {
-    // Ders seçimi değiştiğinde önizlemeyi güncelle
-    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', updateQuickAddPreview);
-    });
-    
-    // Gün seçimi değiştiğinde önizlemeyi güncelle
-    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', updateQuickAddPreview);
-    });
+    // Modal açıldığında event listener'ları ekle
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        // Ders seçimi değiştiğinde önizlemeyi güncelle
+        modal.querySelectorAll('.course-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateQuickAddPreview);
+        });
+        
+        // Gün seçimi değiştiğinde önizlemeyi güncelle
+        modal.querySelectorAll('.day-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateQuickAddPreview);
+        });
+    }
 }
 
 // Hızlı ekleme önizlemesini güncelle
 function updateQuickAddPreview() {
-    const selectedCourses = Array.from(document.querySelectorAll('.course-checkbox:checked'));
-    const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked'));
+    const modal = document.getElementById('quickAddModal');
+    if (!modal) return;
+    
+    const selectedCourses = Array.from(modal.querySelectorAll('.course-checkbox:checked'));
+    const selectedDays = Array.from(modal.querySelectorAll('.day-checkbox:checked'));
     const previewContainer = document.getElementById('previewItems');
+    
+    if (!previewContainer) return;
     
     if (selectedCourses.length === 0 || selectedDays.length === 0) {
         previewContainer.innerHTML = '<small class="text-muted">Ders ve gün seçin...</small>';
@@ -789,8 +860,15 @@ function getDayName(dayValue) {
 
 // Hızlı ekleme ile seçilen dersleri ekle
 function addQuickItems() {
-    const selectedCourses = Array.from(document.querySelectorAll('.course-checkbox:checked'));
-    const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked'));
+    // Modal içindeki checkbox'ları spesifik olarak seç
+    const modal = document.getElementById('quickAddModal');
+    if (!modal) {
+        showAlert('danger', 'Modal bulunamadı.');
+        return;
+    }
+    
+    const selectedCourses = Array.from(modal.querySelectorAll('.course-checkbox:checked'));
+    const selectedDays = Array.from(modal.querySelectorAll('.day-checkbox:checked'));
     
     console.log('Selected courses:', selectedCourses.length);
     console.log('Selected days:', selectedDays.length);
@@ -805,23 +883,29 @@ function addQuickItems() {
         return;
     }
     
+    // Seçimleri önce bir array'e kaydet (modal kapanmadan önce)
+    const coursesToAdd = selectedCourses.map(course => ({
+        id: course.value,
+        name: course.getAttribute('data-course-name'),
+        category: course.getAttribute('data-course-category')
+    }));
+    
+    const daysToAdd = selectedDays.map(day => ({
+        value: day.value,
+        name: getDayName(day.value)
+    }));
+    
     let totalAdded = 0;
     
     // Her ders için her gün için satır ekle
-    selectedCourses.forEach((course, courseIndex) => {
-        const courseId = course.value;
-        const courseName = course.getAttribute('data-course-name');
+    coursesToAdd.forEach((course, courseIndex) => {
+        console.log(`Processing course ${courseIndex + 1}: ${course.name} (ID: ${course.id})`);
         
-        console.log(`Processing course ${courseIndex + 1}: ${courseName} (ID: ${courseId})`);
-        
-        selectedDays.forEach((day, dayIndex) => {
-            const dayValue = day.value;
-            const dayName = getDayName(dayValue);
-            
-            console.log(`  Adding day ${dayIndex + 1}: ${dayName}`);
+        daysToAdd.forEach((day, dayIndex) => {
+            console.log(`  Adding day ${dayIndex + 1}: ${day.name}`);
             
             // Satır ekle
-            addQuickScheduleItem(courseId, dayValue, courseName, dayName);
+            addQuickScheduleItem(course.id, day.value, course.name, day.name);
             totalAdded++;
         });
     });
@@ -832,12 +916,12 @@ function addQuickItems() {
     clearQuickAddSelections();
     
     // Modal'ı kapat
-    const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddModal'));
-    if (modal) {
-        modal.hide();
+    const modalInstance = bootstrap.Modal.getInstance(modal);
+    if (modalInstance) {
+        modalInstance.hide();
     }
     
-    showAlert('success', `${selectedCourses.length} ders, ${selectedDays.length} gün için toplam ${totalAdded} satır eklendi.`);
+    showAlert('success', `${coursesToAdd.length} ders, ${daysToAdd.length} gün için toplam ${totalAdded} satır eklendi.`);
 }
 
 // Hızlı ekleme için satır ekle
@@ -876,51 +960,69 @@ function addQuickScheduleItem(courseId, dayValue, courseName, dayName) {
     filterCoursesByArea();
     
     scheduleItemIndex++;
+    
+    // Index'leri güncelle (sıralı olması için)
+    updateRowIndices();
 }
 
 // Hızlı ekleme seçimlerini temizle
 function clearQuickAddSelections() {
-    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    
-    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.course-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        modal.querySelectorAll('.day-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        updateQuickAddPreview();
+    }
 }
 
 // Tüm dersleri seç
 function selectAllCourses() {
-    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
-        checkbox.checked = true;
-    });
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.course-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateQuickAddPreview();
+    }
 }
 
 // Tüm dersleri kaldır
 function deselectAllCourses() {
-    document.querySelectorAll('.course-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.course-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateQuickAddPreview();
+    }
 }
 
 // Tüm günleri seç
 function selectAllDays() {
-    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-        checkbox.checked = true;
-    });
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.day-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateQuickAddPreview();
+    }
 }
 
 // Tüm günleri kaldır
 function deselectAllDays() {
-    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    updateQuickAddPreview();
+    const modal = document.getElementById('quickAddModal');
+    if (modal) {
+        modal.querySelectorAll('.day-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateQuickAddPreview();
+    }
 }
 </script>
 @endsection

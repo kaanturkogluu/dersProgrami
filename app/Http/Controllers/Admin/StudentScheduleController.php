@@ -566,6 +566,91 @@ class StudentScheduleController extends Controller
     }
 
     /**
+     * Öğrencinin programını PDF olarak indir
+     */
+    public function studentCalendarPdf(Student $student)
+    {
+        $currentUser = Auth::user();
+        
+        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
+        if (!$currentUser->isSuperAdmin() && $student->admin_id !== $currentUser->id) {
+            return redirect()->route('admin.programs.students')
+                ->with('error', 'Bu öğrencinin programını görme yetkiniz bulunmamaktadır.');
+        }
+        
+        $schedules = $student->schedules()
+            ->where('is_active', true)
+            ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
+            ->get();
+
+        // Haftalık programı günlere göre grupla
+        $weeklySchedule = collect();
+        $firstDayOfWeek = null;
+        $firstScheduleStartDate = null;
+        
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->scheduleItems as $item) {
+                // İlk dersin gününü bul (programın başladığı gün)
+                if ($firstDayOfWeek === null) {
+                    $firstDayOfWeek = $item->day_of_week;
+                    $firstScheduleStartDate = $schedule->start_date;
+                }
+                
+                $weeklySchedule->push([
+                    'schedule_name' => $schedule->name,
+                    'area' => $schedule->areas[0] ?? 'TYT',
+                    'day' => $item->day_of_week,
+                    'day_name' => $item->day_name,
+                    'course' => $item->course,
+                    'topic' => $item->topic,
+                    'subtopic' => $item->subtopic,
+                    'notes' => $item->notes,
+                    'is_completed' => $item->is_completed,
+                    'start_date' => $schedule->start_date,
+                    'end_date' => $schedule->end_date
+                ]);
+            }
+        }
+
+        $weeklySchedule = $weeklySchedule->groupBy('day');
+        
+        // Günleri programın başladığı güne göre sırala
+        $dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        if ($firstDayOfWeek && in_array($firstDayOfWeek, $dayOrder)) {
+            $firstDayIndex = array_search($firstDayOfWeek, $dayOrder);
+            $orderedDays = array_merge(
+                array_slice($dayOrder, $firstDayIndex),
+                array_slice($dayOrder, 0, $firstDayIndex)
+            );
+        } else {
+            $orderedDays = $dayOrder;
+        }
+
+        // PDF oluştur ve indir
+        try {
+            // DomPDF paketi yüklü mü kontrol et
+            if (class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.schedules.student-calendar-pdf', compact('student', 'schedules', 'weeklySchedule', 'orderedDays', 'firstScheduleStartDate'));
+                $pdf->setPaper('A4', 'landscape');
+                $pdf->setOption('isRemoteEnabled', true);
+                $pdf->setOption('isHtml5ParserEnabled', true);
+                $pdf->setOption('defaultFont', 'DejaVu Sans');
+                
+                $filename = $student->full_name . '_program_' . date('Y-m-d') . '.pdf';
+                return $pdf->download($filename);
+            } else {
+                // DomPDF yüklü değilse HTML view döndür (tarayıcıda yazdırılabilir)
+                return view('admin.schedules.student-calendar-pdf', compact('student', 'schedules', 'weeklySchedule', 'orderedDays', 'firstScheduleStartDate'));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PDF oluşturma hatası: ' . $e->getMessage());
+            // Hata durumunda HTML view döndür
+            return view('admin.schedules.student-calendar-pdf', compact('student', 'schedules', 'weeklySchedule', 'orderedDays', 'firstScheduleStartDate'))
+                ->with('error', 'PDF oluşturulamadı. Lütfen DomPDF paketinin yüklü olduğundan emin olun: composer require barryvdh/laravel-dompdf');
+        }
+    }
+
+    /**
      * Schedule item'ı sil
      */
     public function destroyScheduleItem(ScheduleItem $scheduleItem)
@@ -658,55 +743,6 @@ class StudentScheduleController extends Controller
 
         return redirect()->route('admin.programs.student.calendar', $student)
             ->with('success', 'Program başarıyla güncellendi.');
-    }
-
-    /**
-     * Öğrencinin programını PDF olarak indir
-     */
-    public function studentCalendarPdf(Student $student)
-    {
-        $currentUser = Auth::user();
-        
-        // Super admin tüm öğrencileri görebilir, normal admin sadece kendi öğrencilerini
-        if (!$currentUser->isSuperAdmin() && $student->admin_id !== $currentUser->id) {
-            return redirect()->route('admin.programs.students')
-                ->with('error', 'Bu öğrencinin programını görme yetkiniz bulunmamaktadır.');
-        }
-        
-        $schedules = $student->schedules()
-            ->where('is_active', true)
-            ->with(['scheduleItems.course.category', 'scheduleItems.topic', 'scheduleItems.subtopic'])
-            ->get();
-
-        // Haftalık programı günlere göre grupla
-        $weeklySchedule = collect();
-        foreach ($schedules as $schedule) {
-            foreach ($schedule->scheduleItems as $item) {
-                $weeklySchedule->push([
-                    'schedule_name' => $schedule->name,
-                    'area' => $schedule->areas[0] ?? 'TYT',
-                    'day' => $item->day_of_week,
-                    'day_name' => $item->day_name,
-                    'course' => $item->course,
-                    'topic' => $item->topic,
-                    'subtopic' => $item->subtopic,
-                    'notes' => $item->notes,
-                    'is_completed' => $item->is_completed,
-                    'start_date' => $schedule->start_date,
-                    'end_date' => $schedule->end_date
-                ]);
-            }
-        }
-
-        $weeklySchedule = $weeklySchedule->groupBy('day');
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.schedules.student-calendar-pdf', compact('student', 'schedules', 'weeklySchedule'));
-        $pdf->setPaper('A4', 'landscape'); // Yatay A4
-        $pdf->setOption('isRemoteEnabled', true);
-        $pdf->setOption('isHtml5ParserEnabled', true);
-        $pdf->setOption('defaultFont', 'DejaVu Sans');
-        
-        return $pdf->download($student->full_name . '_program_' . date('Y-m-d') . '.pdf');
     }
 
     /**

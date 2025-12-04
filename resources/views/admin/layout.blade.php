@@ -156,6 +156,36 @@
             margin: 0 auto;
             font-size: 1.1rem;
         }
+        
+        .sidebar.collapsed .sidebar-brand span {
+            display: none;
+        }
+        
+        .sidebar.collapsed #sidebarToggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        #sidebarToggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        #sidebarToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar.collapsed #sidebarToggle {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin: 0 auto;
+            display: block;
+        }
 
         /* Overlay styles */
         .overlay {
@@ -539,12 +569,15 @@
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebar">
                 <div class="d-flex flex-column h-100">
                     <!-- Header -->
-                    <div class="text-center mb-4 pt-3">
-                        <h4 class="text-white">
+                    <div class="text-center mb-4 pt-3 position-relative">
+                        <button type="button" class="btn btn-sm btn-link text-white position-absolute top-0 end-0 p-2" id="sidebarToggle" onclick="toggleSidebarCollapse()" title="Sidebar'ı Daralt/Genişlet">
+                            <i class="fas fa-chevron-left" id="sidebarToggleIcon"></i>
+                        </button>
+                        <h4 class="text-white sidebar-brand">
                             <i class="fas fa-graduation-cap me-2"></i>
-                            Ders Programı
+                            <span>Ders Programı</span>
                         </h4>
-                        <small class="text-white-50">Admin Panel</small>
+                        <small class="text-white-50 sidebar-brand">Admin Panel</small>
                     </div>
                     
                     <!-- Navigation Menu -->
@@ -791,6 +824,40 @@
                 body.classList.toggle('no-scroll', sidebar.classList.contains('show'));
             }
         }
+        
+        // Sidebar collapse/expand functionality for desktop
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleIcon = document.getElementById('sidebarToggleIcon');
+            const mainContent = document.querySelector('.main-content');
+            
+            sidebar.classList.toggle('collapsed');
+            
+            // Icon'u değiştir
+            if (sidebar.classList.contains('collapsed')) {
+                toggleIcon.classList.remove('fa-chevron-left');
+                toggleIcon.classList.add('fa-chevron-right');
+                // LocalStorage'a kaydet
+                localStorage.setItem('sidebarCollapsed', 'true');
+            } else {
+                toggleIcon.classList.remove('fa-chevron-right');
+                toggleIcon.classList.add('fa-chevron-left');
+                // LocalStorage'dan kaldır
+                localStorage.removeItem('sidebarCollapsed');
+            }
+        }
+        
+        // Sayfa yüklendiğinde sidebar durumunu kontrol et
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleIcon = document.getElementById('sidebarToggleIcon');
+            
+            if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth >= 768) {
+                sidebar.classList.add('collapsed');
+                toggleIcon.classList.remove('fa-chevron-left');
+                toggleIcon.classList.add('fa-chevron-right');
+            }
+        });
 
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {

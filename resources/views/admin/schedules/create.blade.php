@@ -16,7 +16,7 @@
     </div>
 </div>
 
-<form action="{{ route('admin.schedules.store') }}" method="POST" id="scheduleForm">
+<form action="{{ route('admin.schedules.store') }}" method="POST" id="scheduleForm" novalidate>
     @csrf
     
     <!-- Şablon Seçimi -->
@@ -1447,31 +1447,72 @@ function showSaveConfirmation() {
     modal.show();
 }
 
+// Form submit event listener - HTML5 validation ile birlikte çalışsın
+document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+    // Eğer form validasyonu geçmezse, submit'i engelle
+    if (!validateForm()) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+});
+
 // Form validasyonu
 function validateForm() {
-    const studentId = document.getElementById('student_id').value;
-    const programName = document.getElementById('name').value;
+    let isValid = true;
+    const studentId = document.getElementById('student_id');
+    const programName = document.getElementById('name');
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
     const areas = document.querySelectorAll('.area-checkbox:checked');
     const scheduleItems = document.querySelectorAll('.schedule-item');
     
-    if (!studentId) {
+    // Öğrenci seçimi kontrolü
+    if (!studentId.value) {
+        studentId.classList.add('is-invalid');
         showAlert('danger', 'Lütfen bir öğrenci seçin.');
-        return false;
+        isValid = false;
+    } else {
+        studentId.classList.remove('is-invalid');
     }
     
-    if (!programName.trim()) {
+    // Program adı kontrolü
+    if (!programName.value.trim()) {
+        programName.classList.add('is-invalid');
         showAlert('danger', 'Lütfen program adını girin.');
-        return false;
+        isValid = false;
+    } else {
+        programName.classList.remove('is-invalid');
     }
     
+    // Başlangıç tarihi kontrolü
+    if (!startDate.value) {
+        startDate.classList.add('is-invalid');
+        showAlert('danger', 'Lütfen program başlangıç tarihini seçin.');
+        isValid = false;
+    } else {
+        startDate.classList.remove('is-invalid');
+    }
+    
+    // Bitiş tarihi kontrolü
+    if (!endDate.value) {
+        endDate.classList.add('is-invalid');
+        showAlert('danger', 'Lütfen program bitiş tarihini seçin.');
+        isValid = false;
+    } else {
+        endDate.classList.remove('is-invalid');
+    }
+    
+    // Alan seçimi kontrolü
     if (areas.length === 0) {
         showAlert('danger', 'Lütfen en az bir alan seçin.');
-        return false;
+        isValid = false;
     }
     
+    // Ders kontrolü
     if (scheduleItems.length === 0) {
         showAlert('danger', 'Lütfen en az bir ders ekleyin.');
-        return false;
+        isValid = false;
     }
     
     // Her satırda gün ve ders seçili mi kontrol et
@@ -1481,17 +1522,32 @@ function validateForm() {
         const courseSelect = row.querySelector('.course-select');
         
         if (!daySelect.value) {
+            daySelect.classList.add('is-invalid');
             showAlert('danger', `${i + 1}. satırda gün seçimi yapılmamış.`);
-            return false;
+            isValid = false;
+        } else {
+            daySelect.classList.remove('is-invalid');
         }
         
         if (!courseSelect.value) {
+            courseSelect.classList.add('is-invalid');
             showAlert('danger', `${i + 1}. satırda ders seçimi yapılmamış.`);
-            return false;
+            isValid = false;
+        } else {
+            courseSelect.classList.remove('is-invalid');
         }
     }
     
-    return true;
+    // Hata varsa ilk hataya scroll yap
+    if (!isValid) {
+        const firstInvalid = document.querySelector('.is-invalid');
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+    }
+    
+    return isValid;
 }
 
 // Onay modalını bilgilerle doldur
