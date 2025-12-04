@@ -203,105 +203,114 @@
                     Excel'de olduğu gibi önce tüm dersleri ekleyip sonra düzenleyebilirsiniz.
                 </div>
                 
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <h6>Dersleri Seçin:</h6>
-                        <div class="mb-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllCourses()">
-                                <i class="fas fa-check-double"></i> Tümünü Seç
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllCourses()">
-                                <i class="fas fa-times"></i> Tümünü Kaldır
-                            </button>
-                        </div>
-                        <div id="courseCheckboxes" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
-                            @php
-                                // Dersleri alanlarına göre grupla
-                                $coursesByArea = [];
-                                foreach($courses as $course) {
-                                    $area = $course->category->name ?? 'Diğer';
-                                    if (!isset($coursesByArea[$area])) {
-                                        $coursesByArea[$area] = [];
-                                    }
-                                    $coursesByArea[$area][] = $course;
-                                }
-                                // Alanları alfabetik sırala
-                                ksort($coursesByArea);
-                            @endphp
-                            
-                            @foreach($coursesByArea as $area => $areaCourses)
-                                <div class="course-area-group" data-area="{{ $area }}">
-                                    <div class="area-header mb-2 mt-3" style="font-weight: bold; color: #4e73df; border-bottom: 2px solid #4e73df; padding-bottom: 5px;">
-                                        <i class="fas fa-tag me-2"></i>{{ $area }}
-                                        <small class="text-muted">({{ count($areaCourses) }} ders)</small>
+                        <div class="quick-add-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-book me-2"></i>
+                                Dersleri Seçin
+                            </h6>
+                            <div id="courseCheckboxes" class="course-checkboxes-container">
+                                @php
+                                    // Dersleri alanlara göre grupla
+                                    $coursesByCategory = $courses->groupBy(function($course) {
+                                        return $course->category->name;
+                                    });
+                                @endphp
+                                @foreach($coursesByCategory as $categoryName => $categoryCourses)
+                                <div class="course-group mb-3" data-category="{{ $categoryName }}">
+                                    <div class="course-group-header">
+                                        <strong class="text-primary">
+                                            <i class="fas fa-folder-open me-2"></i>
+                                            {{ $categoryName }}
+                                        </strong>
+                                        <span class="badge bg-secondary course-count">{{ $categoryCourses->count() }} ders</span>
                                     </div>
-                                    @foreach($areaCourses as $course)
-                                    <div class="form-check mb-2 course-checkbox-item" 
-                                         data-course-areas="{{ json_encode($course->areas) }}"
-                                         data-course-area="{{ $area }}">
-                                        <input class="form-check-input course-checkbox" type="checkbox" 
-                                               value="{{ $course->id }}" 
-                                               data-course-name="{{ $course->name }}" 
-                                               data-course-category="{{ $course->category->name }}"
-                                               data-course-areas="{{ json_encode($course->areas) }}"
-                                               id="quick_course_{{ $course->id }}">
-                                        <label class="form-check-label" for="quick_course_{{ $course->id }}" style="cursor: pointer;">
-                                            {{ $course->name }}
-                                        </label>
+                                    <div class="course-list">
+                                        @foreach($categoryCourses as $course)
+                                        <div class="form-check course-checkbox-item">
+                                            <input class="form-check-input course-checkbox" type="checkbox" 
+                                                   value="{{ $course->id }}" 
+                                                   data-course-name="{{ $course->name }}" 
+                                                   data-course-category="{{ $course->category->name }}"
+                                                   data-course-areas="{{ json_encode($course->areas) }}"
+                                                   id="quick_course_{{ $course->id }}">
+                                            <label class="form-check-label" for="quick_course_{{ $course->id }}">
+                                                {{ $course->name }}
+                                            </label>
+                                        </div>
+                                        @endforeach
                                     </div>
-                                    @endforeach
                                 </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                     
                     <div class="col-md-6">
-                        <h6>Günleri Seçin:</h6>
-                        <div class="mb-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllDays()">
-                                <i class="fas fa-check-double"></i> Tümünü Seç
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllDays()">
-                                <i class="fas fa-times"></i> Tümünü Kaldır
-                            </button>
-                        </div>
-                        <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="monday" id="day_monday">
-                                <label class="form-check-label" for="day_monday" style="cursor: pointer;">Pazartesi</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="tuesday" id="day_tuesday">
-                                <label class="form-check-label" for="day_tuesday" style="cursor: pointer;">Salı</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="wednesday" id="day_wednesday">
-                                <label class="form-check-label" for="day_wednesday" style="cursor: pointer;">Çarşamba</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="thursday" id="day_thursday">
-                                <label class="form-check-label" for="day_thursday" style="cursor: pointer;">Perşembe</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="friday" id="day_friday">
-                                <label class="form-check-label" for="day_friday" style="cursor: pointer;">Cuma</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="saturday" id="day_saturday">
-                                <label class="form-check-label" for="day_saturday" style="cursor: pointer;">Cumartesi</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input day-checkbox" type="checkbox" value="sunday" id="day_sunday">
-                                <label class="form-check-label" for="day_sunday" style="cursor: pointer;">Pazar</label>
+                        <div class="quick-add-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Günleri Seçin
+                            </h6>
+                            <div class="days-container">
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="monday" id="day_monday">
+                                    <label class="form-check-label" for="day_monday">
+                                        <i class="fas fa-circle text-primary me-2"></i>Pazartesi
+                                    </label>
+                                </div>
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="tuesday" id="day_tuesday">
+                                    <label class="form-check-label" for="day_tuesday">
+                                        <i class="fas fa-circle text-success me-2"></i>Salı
+                                    </label>
+                                </div>
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="wednesday" id="day_wednesday">
+                                    <label class="form-check-label" for="day_wednesday">
+                                        <i class="fas fa-circle text-warning me-2"></i>Çarşamba
+                                    </label>
+                                </div>
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="thursday" id="day_thursday">
+                                    <label class="form-check-label" for="day_thursday">
+                                        <i class="fas fa-circle text-danger me-2"></i>Perşembe
+                                    </label>
+                                </div>
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="friday" id="day_friday">
+                                    <label class="form-check-label" for="day_friday">
+                                        <i class="fas fa-circle text-info me-2"></i>Cuma
+                                    </label>
+                                </div>
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="saturday" id="day_saturday">
+                                    <label class="form-check-label" for="day_saturday">
+                                        <i class="fas fa-circle text-secondary me-2"></i>Cumartesi
+                                    </label>
+                                </div>
+                                <div class="form-check day-item">
+                                    <input class="form-check-input day-checkbox" type="checkbox" value="sunday" id="day_sunday">
+                                    <label class="form-check-label" for="day_sunday">
+                                        <i class="fas fa-circle text-dark me-2"></i>Pazar
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="mt-3">
-                    <h6>Önizleme:</h6>
-                    <div id="previewItems" class="border rounded p-2" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa;">
-                        <small class="text-muted">Ders ve gün seçin...</small>
+                <div class="mt-4">
+                    <h6 class="section-title">
+                        <i class="fas fa-eye me-2"></i>
+                        Önizleme
+                    </h6>
+                    <div id="previewItems" class="preview-container">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small class="text-muted">Ders ve gün seçin...</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -410,61 +419,58 @@ function filterQuickAddCourses(selectedAreas) {
     const modal = document.getElementById('quickAddModal');
     if (!modal) return;
     
-    const courseAreaGroups = modal.querySelectorAll('.course-area-group');
-    
-    courseAreaGroups.forEach(group => {
-        const area = group.getAttribute('data-area');
-        const courseCheckboxItems = group.querySelectorAll('.course-checkbox-item');
+    const courseGroups = modal.querySelectorAll('.course-group');
+    courseGroups.forEach(group => {
+        const categoryName = group.getAttribute('data-category');
+        const courseCheckboxes = group.querySelectorAll('.course-checkbox');
         let visibleCount = 0;
         
-        courseCheckboxItems.forEach(item => {
-            const checkbox = item.querySelector('.course-checkbox');
-            if (!checkbox) return;
+        courseCheckboxes.forEach(checkbox => {
+            const courseCategory = checkbox.getAttribute('data-course-category');
+            const courseAreasAttr = checkbox.getAttribute('data-course-areas') || '[]';
             
-            const courseAreasAttr = checkbox.getAttribute('data-course-areas') || item.getAttribute('data-course-areas') || '[]';
+            let shouldShow = false;
             
-            try {
-                const courseAreas = JSON.parse(courseAreasAttr);
-                if (!Array.isArray(courseAreas) || courseAreas === null) {
-                    // Eğer alan bilgisi yoksa, seçili alan yoksa göster
-                    item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
-                    if (selectedAreas.length === 0) visibleCount++;
-                    return;
+            if (selectedAreas.length === 0) {
+                shouldShow = true;
+            } else {
+                try {
+                    const courseAreas = JSON.parse(courseAreasAttr);
+                    if (Array.isArray(courseAreas) && courseAreas.length > 0) {
+                        shouldShow = selectedAreas.some(selectedArea => courseAreas.includes(selectedArea));
+                    } else {
+                        // Eğer alan bilgisi yoksa, kategori adına göre kontrol et
+                        shouldShow = selectedAreas.includes(courseCategory);
+                    }
+                } catch (e) {
+                    // JSON parse hatası durumunda kategori adına göre kontrol et
+                    shouldShow = selectedAreas.includes(courseCategory);
                 }
-                
-                // Seçili alanlardan en az biri dersin alanları içinde mi?
-                // Eğer hiç alan seçilmemişse tüm dersleri göster
-                if (selectedAreas.length === 0) {
-                    item.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    const hasMatchingArea = selectedAreas.some(selectedArea => courseAreas.includes(selectedArea));
-                    item.style.display = hasMatchingArea ? 'block' : 'none';
-                    if (hasMatchingArea) visibleCount++;
-                }
-            } catch (e) {
-                console.error('Error parsing course areas in modal:', e);
-                item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
-                if (selectedAreas.length === 0) visibleCount++;
+            }
+            
+            if (shouldShow) {
+                checkbox.closest('.course-checkbox-item').style.display = 'block';
+                visibleCount++;
+            } else {
+                checkbox.closest('.course-checkbox-item').style.display = 'none';
+                checkbox.checked = false;
             }
         });
         
-        // Eğer grupta görünen ders yoksa, grubu gizle
-        const areaHeader = group.querySelector('.area-header');
+        // Eğer bu grupta görünen ders yoksa, grubu gizle
         if (visibleCount === 0) {
             group.style.display = 'none';
         } else {
             group.style.display = 'block';
             // Görünen ders sayısını güncelle
-            if (areaHeader) {
-                const countText = areaHeader.querySelector('small');
-                if (countText) {
-                    const totalCount = courseCheckboxItems.length;
-                    countText.textContent = `(${visibleCount}/${totalCount} ders)`;
-                }
+            const countBadge = group.querySelector('.course-count');
+            if (countBadge) {
+                countBadge.textContent = visibleCount + ' ders';
             }
         }
     });
+    
+    updateQuickAddPreview();
 }
 
 // Alert gösterme fonksiyonu
@@ -515,6 +521,9 @@ function addScheduleItem() {
     filterCoursesByArea();
     
     scheduleItemIndex++;
+    
+    // Günlere göre sırala
+    sortScheduleItemsByDay();
 }
 
 // Konuları yükle
@@ -645,8 +654,8 @@ function removeScheduleItem(button) {
     const scheduleItem = button.closest('.schedule-item');
     scheduleItem.remove();
     
-    // Satır numaralarını güncelle
-    updateRowNumbers();
+    // Günlere göre sırala
+    sortScheduleItemsByDay();
     
     // Eğer hiç satır kalmadıysa boş satırı göster
     const tbody = document.getElementById('scheduleItems');
@@ -659,13 +668,122 @@ function removeScheduleItem(button) {
     }
 }
 
-// Satır numaralarını güncelle
+// Satır numaralarını güncelle (aritmetik artış)
 function updateRowNumbers() {
     const scheduleItems = document.querySelectorAll('.schedule-item');
     scheduleItems.forEach((item, index) => {
         const rowNumber = item.querySelector('.row-number');
-        rowNumber.textContent = index + 1;
+        if (rowNumber) {
+            rowNumber.textContent = index + 1;
+        }
     });
+}
+
+// Program öğelerini günlere göre sırala ve grupla
+function sortScheduleItemsByDay() {
+    const tbody = document.getElementById('scheduleItems');
+    if (!tbody) return;
+    
+    const scheduleItems = Array.from(tbody.querySelectorAll('.schedule-item'));
+    if (scheduleItems.length === 0) return;
+    
+    // Gün sırası
+    const dayOrder = {
+        'monday': 1,
+        'tuesday': 2,
+        'wednesday': 3,
+        'thursday': 4,
+        'friday': 5,
+        'saturday': 6,
+        'sunday': 7
+    };
+    
+    // Önce tüm gün hücrelerini görünür yap
+    scheduleItems.forEach(item => {
+        const dayCell = item.querySelector('td:nth-child(2)');
+        if (dayCell) {
+            dayCell.style.display = '';
+            dayCell.removeAttribute('rowspan');
+            dayCell.classList.remove('day-header-cell', 'day-hidden-cell');
+        }
+    });
+    
+    // Satırları günlerine göre sırala
+    scheduleItems.sort((a, b) => {
+        const daySelectA = a.querySelector('.day-select');
+        const daySelectB = b.querySelector('.day-select');
+        
+        const dayA = daySelectA ? daySelectA.value : '';
+        const dayB = daySelectB ? daySelectB.value : '';
+        
+        // Eğer gün seçilmemişse en sona koy
+        if (!dayA && !dayB) return 0;
+        if (!dayA) return 1;
+        if (!dayB) return -1;
+        
+        // Gün sırasına göre karşılaştır
+        const orderA = dayOrder[dayA] || 999;
+        const orderB = dayOrder[dayB] || 999;
+        
+        if (orderA !== orderB) {
+            return orderA - orderB;
+        }
+        
+        // Aynı gündeyse, satır numarasına göre sırala (eklenme sırası)
+        return 0;
+    });
+    
+    // Günlere göre grupla
+    const groupedByDay = {};
+    scheduleItems.forEach(item => {
+        const daySelect = item.querySelector('.day-select');
+        const day = daySelect ? daySelect.value : '';
+        
+        if (!groupedByDay[day]) {
+            groupedByDay[day] = [];
+        }
+        groupedByDay[day].push(item);
+    });
+    
+    // Tbody'yi temizle
+    scheduleItems.forEach(item => item.remove());
+    
+    // Günlere göre sıralı şekilde ekle
+    const sortedDays = Object.keys(groupedByDay).sort((a, b) => {
+        const orderA = dayOrder[a] || 999;
+        const orderB = dayOrder[b] || 999;
+        return orderA - orderB;
+    });
+    
+    sortedDays.forEach((day) => {
+        const items = groupedByDay[day];
+        
+        items.forEach((item, itemIndex) => {
+            const dayCell = item.querySelector('td:nth-child(2)');
+            const daySelect = item.querySelector('.day-select');
+            
+            if (dayCell && daySelect) {
+                // İlk satırda gün bilgisini göster ve rowspan ekle
+                if (itemIndex === 0) {
+                    dayCell.style.display = '';
+                    dayCell.style.visibility = 'visible';
+                    dayCell.setAttribute('rowspan', items.length);
+                    dayCell.classList.add('day-header-cell');
+                    dayCell.classList.remove('day-hidden-cell');
+                    daySelect.style.display = '';
+                } else {
+                    // Diğer satırlar: Gün hücresini DOM'dan kaldır (rowspan kullanıldığı için)
+                    // Rowspan kullanıldığında diğer satırlardaki hücreyi kaldırmak doğru
+                    dayCell.remove();
+                }
+            }
+            
+            tbody.appendChild(item);
+        });
+    });
+    
+    // Satır numaralarını güncelle
+    updateRowNumbers();
 }
 
 // Form gönderilmeden önce validasyon
@@ -716,9 +834,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const quickAddModal = document.getElementById('quickAddModal');
     if (quickAddModal) {
         quickAddModal.addEventListener('show.bs.modal', function() {
-            filterCoursesByArea();
+            const selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+            if (selectedAreas.length > 0) {
+                filterQuickAddCourses(selectedAreas);
+            } else {
+                // Hiç alan seçilmediyse tüm dersleri göster
+                const courseGroups = quickAddModal.querySelectorAll('.course-group');
+                courseGroups.forEach(group => {
+                    group.style.display = 'block';
+                    const courseCheckboxes = group.querySelectorAll('.course-checkbox');
+                    courseCheckboxes.forEach(checkbox => {
+                        checkbox.closest('.course-checkbox-item').style.display = 'block';
+                    });
+                    const countBadge = group.querySelector('.course-count');
+                    if (countBadge) {
+                        countBadge.textContent = courseCheckboxes.length + ' ders';
+                    }
+                });
+            }
         });
     }
+    
+    // Gün seçimi değiştiğinde sırala
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('day-select')) {
+            sortScheduleItemsByDay();
+        }
+    });
 });
 
 // Hızlı ekleme modalı için event listener'ları ayarla
@@ -740,35 +882,44 @@ function updateQuickAddPreview() {
     const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked'));
     const previewContainer = document.getElementById('previewItems');
     
-    console.log('Preview - Selected courses:', selectedCourses.length);
-    console.log('Preview - Selected days:', selectedDays.length);
+    if (!previewContainer) return;
     
     if (selectedCourses.length === 0 || selectedDays.length === 0) {
-        previewContainer.innerHTML = '<small class="text-muted">Ders ve gün seçin...</small>';
+        previewContainer.innerHTML = `
+            <div class="preview-placeholder">
+                <i class="fas fa-info-circle me-2"></i>
+                <small class="text-muted">Ders ve gün seçin...</small>
+            </div>
+        `;
         return;
     }
     
-    let previewHtml = '';
-    let itemCount = 0;
-    
-    selectedCourses.forEach((course, cIndex) => {
+    let previewHtml = '<div class="row">';
+    selectedCourses.forEach(course => {
         const courseName = course.getAttribute('data-course-name');
-        const courseCategory = course.getAttribute('data-course-category');
         
-        console.log(`Preview course ${cIndex + 1}:`, courseName);
-        
-        selectedDays.forEach((day, dIndex) => {
-            const dayName = getDayName(day.value);
-            previewHtml += `
-                <div class="d-flex justify-content-between align-items-center mb-1 p-1 border-bottom">
-                    <span><strong>${dayName}</strong> - ${courseName} <small class="text-muted">(${courseCategory})</small></span>
+        previewHtml += `<div class="col-md-6 mb-2">
+            <div class="card card-body p-2">
+                <strong>${courseName}</strong>
+                <div class="mt-1">
+                    ${selectedDays.map(day => {
+                        const dayNames = {
+                            'monday': 'Pzt',
+                            'tuesday': 'Sal',
+                            'wednesday': 'Çar',
+                            'thursday': 'Per',
+                            'friday': 'Cum',
+                            'saturday': 'Cmt',
+                            'sunday': 'Paz'
+                        };
+                        return `<span class="badge bg-primary me-1">${dayNames[day.value]}</span>`;
+                    }).join('')}
                 </div>
-            `;
-            itemCount++;
-        });
+            </div>
+        </div>`;
     });
+    previewHtml += '</div>';
     
-    console.log('Preview items count:', itemCount);
     previewContainer.innerHTML = previewHtml;
 }
 
@@ -829,6 +980,9 @@ function addQuickItems() {
     
     // Seçimleri temizle (modal kapatılmadan ÖNCE)
     clearQuickAddSelections();
+    
+    // Günlere göre sırala
+    sortScheduleItemsByDay();
     
     // Modal'ı kapat
     const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddModal'));
@@ -894,10 +1048,12 @@ function clearQuickAddSelections() {
 function selectAllCourses() {
     const modal = document.getElementById('quickAddModal');
     if (modal) {
-        modal.querySelectorAll('.course-checkbox-item[style*="block"], .course-checkbox-item:not([style*="none"])').forEach(item => {
-            const checkbox = item.querySelector('.course-checkbox');
-            if (checkbox && item.style.display !== 'none') {
-                checkbox.checked = true;
+        modal.querySelectorAll('.course-checkbox-item').forEach(item => {
+            if (item.style.display !== 'none') {
+                const checkbox = item.querySelector('.course-checkbox');
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
             }
         });
         updateQuickAddPreview();
@@ -931,4 +1087,310 @@ function deselectAllDays() {
     updateQuickAddPreview();
 }
 </script>
+
+<style>
+/* Hızlı Ekleme Modal - Ders Grupları */
+#quickAddModal .course-group {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    width: 100%;
+}
+
+#quickAddModal .course-group:not(:last-child) {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 1rem;
+}
+
+#quickAddModal .course-group .border-bottom {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+#quickAddModal .course-group .text-primary {
+    font-size: 1rem;
+    font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+#quickAddModal .course-group .course-count {
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+#quickAddModal .course-checkbox-item {
+    margin-left: 0.5rem;
+    padding-left: 0.25rem;
+    padding-right: 0.5rem;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+}
+
+#quickAddModal .course-checkbox-item .form-check-input {
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+#quickAddModal .course-checkbox-item label {
+    font-weight: 400;
+    cursor: pointer;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.5;
+    width: 100%;
+    margin-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+#quickAddModal .course-checkbox-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+}
+
+#quickAddModal #courseCheckboxes {
+    padding-right: 0.5rem;
+}
+
+#quickAddModal .modal-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    padding: 1.5rem;
+}
+
+#quickAddModal .modal-dialog {
+    max-width: 900px;
+    margin: 1.75rem auto;
+}
+
+#quickAddModal .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#quickAddModal .col-md-6 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+#quickAddModal .form-check {
+    margin-bottom: 0.5rem;
+}
+
+#quickAddModal .form-check-label {
+    width: 100%;
+    display: block;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Hızlı Ekleme Alanı Görünüm İyileştirmeleri */
+#quickAddModal .quick-add-section {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#quickAddModal .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+}
+
+#quickAddModal .section-title i {
+    color: #0d6efd;
+}
+
+#quickAddModal .course-checkboxes-container {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.5rem;
+    flex: 1;
+}
+
+#quickAddModal .course-checkboxes-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+#quickAddModal .course-checkboxes-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#quickAddModal .course-checkboxes-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+#quickAddModal .course-checkboxes-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#quickAddModal .course-group {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+#quickAddModal .course-group:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-color: #dee2e6;
+}
+
+#quickAddModal .course-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#quickAddModal .course-group-header strong {
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+#quickAddModal .course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+#quickAddModal .course-checkbox-item {
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin: 0;
+}
+
+#quickAddModal .course-checkbox-item:hover {
+    background-color: #e9ecef;
+}
+
+#quickAddModal .course-checkbox-item label {
+    margin-left: 0.5rem;
+    padding: 0;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+#quickAddModal .days-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+#quickAddModal .day-item {
+    padding: 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin: 0;
+    background: #ffffff;
+}
+
+#quickAddModal .day-item:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    transform: translateX(4px);
+}
+
+#quickAddModal .day-item label {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    width: 100%;
+}
+
+#quickAddModal .day-item input:checked + label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+#quickAddModal .preview-container {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    min-height: 150px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+#quickAddModal .preview-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    height: 100%;
+}
+
+#quickAddModal .preview-container .row {
+    margin: 0;
+}
+
+#quickAddModal .preview-container .card {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+#quickAddModal .preview-container .card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+/* Gün Gruplama Stilleri */
+.day-header-cell {
+    background-color: #e7f3ff !important;
+    font-weight: 600;
+    vertical-align: middle;
+    text-align: center;
+    border-right: 2px solid #0d6efd !important;
+    position: relative;
+}
+
+.day-header-cell .day-select {
+    font-weight: 600;
+    background-color: #ffffff;
+    border: 2px solid #0d6efd;
+    width: 100%;
+}
+
+.day-hidden-cell {
+    display: none !important;
+}
+
+
+
+.schedule-item:has(.day-header-cell) {
+    border-top: 2px solid #0d6efd;
+}
+
+.schedule-item:has(.day-header-cell) + .schedule-item {
+    border-top: 1px solid #dee2e6;
+}
+</style>
 @endsection
