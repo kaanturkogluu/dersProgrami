@@ -215,19 +215,42 @@
                             </button>
                         </div>
                         <div id="courseCheckboxes" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px;">
-                            @foreach($courses as $course)
-                            <div class="form-check mb-2 course-checkbox-item" 
-                                 data-course-areas="{{ json_encode($course->areas) }}">
-                                <input class="form-check-input course-checkbox" type="checkbox" 
-                                       value="{{ $course->id }}" 
-                                       data-course-name="{{ $course->name }}" 
-                                       data-course-category="{{ $course->category->name }}"
-                                       data-course-areas="{{ json_encode($course->areas) }}"
-                                       id="quick_course_{{ $course->id }}">
-                                <label class="form-check-label" for="quick_course_{{ $course->id }}" style="cursor: pointer;">
-                                    <strong>{{ $course->category->name }}</strong> - {{ $course->name }}
-                                </label>
-                            </div>
+                            @php
+                                // Dersleri alanlarına göre grupla
+                                $coursesByArea = [];
+                                foreach($courses as $course) {
+                                    $area = $course->category->name ?? 'Diğer';
+                                    if (!isset($coursesByArea[$area])) {
+                                        $coursesByArea[$area] = [];
+                                    }
+                                    $coursesByArea[$area][] = $course;
+                                }
+                                // Alanları alfabetik sırala
+                                ksort($coursesByArea);
+                            @endphp
+                            
+                            @foreach($coursesByArea as $area => $areaCourses)
+                                <div class="course-area-group" data-area="{{ $area }}">
+                                    <div class="area-header mb-2 mt-3" style="font-weight: bold; color: #4e73df; border-bottom: 2px solid #4e73df; padding-bottom: 5px;">
+                                        <i class="fas fa-tag me-2"></i>{{ $area }}
+                                        <small class="text-muted">({{ count($areaCourses) }} ders)</small>
+                                    </div>
+                                    @foreach($areaCourses as $course)
+                                    <div class="form-check mb-2 course-checkbox-item" 
+                                         data-course-areas="{{ json_encode($course->areas) }}"
+                                         data-course-area="{{ $area }}">
+                                        <input class="form-check-input course-checkbox" type="checkbox" 
+                                               value="{{ $course->id }}" 
+                                               data-course-name="{{ $course->name }}" 
+                                               data-course-category="{{ $course->category->name }}"
+                                               data-course-areas="{{ json_encode($course->areas) }}"
+                                               id="quick_course_{{ $course->id }}">
+                                        <label class="form-check-label" for="quick_course_{{ $course->id }}" style="cursor: pointer;">
+                                            {{ $course->name }}
+                                        </label>
+                                    </div>
+                                    @endforeach
+                                </div>
                             @endforeach
                         </div>
                     </div>
@@ -387,33 +410,59 @@ function filterQuickAddCourses(selectedAreas) {
     const modal = document.getElementById('quickAddModal');
     if (!modal) return;
     
-    const courseCheckboxItems = modal.querySelectorAll('.course-checkbox-item');
+    const courseAreaGroups = modal.querySelectorAll('.course-area-group');
     
-    courseCheckboxItems.forEach(item => {
-        const checkbox = item.querySelector('.course-checkbox');
-        if (!checkbox) return;
+    courseAreaGroups.forEach(group => {
+        const area = group.getAttribute('data-area');
+        const courseCheckboxItems = group.querySelectorAll('.course-checkbox-item');
+        let visibleCount = 0;
         
-        const courseAreasAttr = checkbox.getAttribute('data-course-areas') || item.getAttribute('data-course-areas') || '[]';
-        
-        try {
-            const courseAreas = JSON.parse(courseAreasAttr);
-            if (!Array.isArray(courseAreas) || courseAreas === null) {
-                // Eğer alan bilgisi yoksa, seçili alan yoksa göster
-                item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
-                return;
-            }
+        courseCheckboxItems.forEach(item => {
+            const checkbox = item.querySelector('.course-checkbox');
+            if (!checkbox) return;
             
-            // Seçili alanlardan en az biri dersin alanları içinde mi?
-            // Eğer hiç alan seçilmemişse tüm dersleri göster
-            if (selectedAreas.length === 0) {
-                item.style.display = 'block';
-            } else {
-                const hasMatchingArea = selectedAreas.some(area => courseAreas.includes(area));
-                item.style.display = hasMatchingArea ? 'block' : 'none';
+            const courseAreasAttr = checkbox.getAttribute('data-course-areas') || item.getAttribute('data-course-areas') || '[]';
+            
+            try {
+                const courseAreas = JSON.parse(courseAreasAttr);
+                if (!Array.isArray(courseAreas) || courseAreas === null) {
+                    // Eğer alan bilgisi yoksa, seçili alan yoksa göster
+                    item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+                    if (selectedAreas.length === 0) visibleCount++;
+                    return;
+                }
+                
+                // Seçili alanlardan en az biri dersin alanları içinde mi?
+                // Eğer hiç alan seçilmemişse tüm dersleri göster
+                if (selectedAreas.length === 0) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    const hasMatchingArea = selectedAreas.some(selectedArea => courseAreas.includes(selectedArea));
+                    item.style.display = hasMatchingArea ? 'block' : 'none';
+                    if (hasMatchingArea) visibleCount++;
+                }
+            } catch (e) {
+                console.error('Error parsing course areas in modal:', e);
+                item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+                if (selectedAreas.length === 0) visibleCount++;
             }
-        } catch (e) {
-            console.error('Error parsing course areas in modal:', e);
-            item.style.display = selectedAreas.length === 0 ? 'block' : 'none';
+        });
+        
+        // Eğer grupta görünen ders yoksa, grubu gizle
+        const areaHeader = group.querySelector('.area-header');
+        if (visibleCount === 0) {
+            group.style.display = 'none';
+        } else {
+            group.style.display = 'block';
+            // Görünen ders sayısını güncelle
+            if (areaHeader) {
+                const countText = areaHeader.querySelector('small');
+                if (countText) {
+                    const totalCount = courseCheckboxItems.length;
+                    countText.textContent = `(${visibleCount}/${totalCount} ders)`;
+                }
+            }
         }
     });
 }

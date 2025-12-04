@@ -239,6 +239,7 @@ class StudentScheduleController extends Controller
         
         $topics = Topic::where('course_id', $courseId)
             ->where('is_active', true)
+            ->orderBy('order_index')
             ->orderBy('name')
             ->get();
         
@@ -266,6 +267,7 @@ class StudentScheduleController extends Controller
         
         $subtopics = Subtopic::where('topic_id', $topicId)
             ->where('is_active', true)
+            ->orderBy('order_index')
             ->orderBy('name')
             ->get();
         
